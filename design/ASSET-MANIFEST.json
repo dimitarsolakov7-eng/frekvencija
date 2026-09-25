@@ -1,0 +1,113 @@
+{
+  "brand": "Frekvencija",
+  "domain": "frekvencija.online",
+  "kind": "visual-design-handoff",
+  "screens": [
+    {
+      "file": "screens/01-homepage-desktop.png",
+      "title": "Public homepage",
+      "route": "/",
+      "pixels": [
+        1024,
+        1536
+      ],
+      "sha256": "6699fdc96ae49b70e65dabe5b6b0ec5dc8ba489578174a5d05c20e832f43e71b"
+    },
+    {
+      "file": "screens/02-login-desktop.png",
+      "title": "Business login",
+      "route": "/login",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "06f03d6c1f3c0de842e50b70d30d29d71628ec309680fd70d5395ffd9d5bb877"
+    },
+    {
+      "file": "screens/03-radio-player-desktop.png",
+      "title": "Desktop radio player",
+      "route": "/radio",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "09ff4cfc94a881cb130eb8bea25f87f1dfb65c13832f62e677e41462629b49c3"
+    },
+    {
+      "file": "screens/04-radio-player-mobile.png",
+      "title": "Mobile radio player",
+      "route": "/radio",
+      "pixels": [
+        853,
+        1844
+      ],
+      "sha256": "63da1732afd43268295c75340324e6c346abe479de2e6db86028d67cd920db67"
+    },
+    {
+      "file": "screens/05-admin-music-library.png",
+      "title": "Music library",
+      "route": "/admin/music",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "211aa3192dd61412c80ff85a025e62feddc8dbcc06bc4e6088545a58ffdf42c5"
+    },
+    {
+      "file": "screens/06-admin-businesses.png",
+      "title": "Business management",
+      "route": "/admin/businesses",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "dc063e2a865ec1147e7eb73133290d2ff348e28211826dd7975f6a202bde1f49"
+    },
+    {
+      "file": "screens/07-admin-announcements.png",
+      "title": "Personalized announcements",
+      "route": "/admin/announcements",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "d0fb26a99f914ed8760f091cd4b3f84ca8ae244fc18c1a14bacb3a731ca522a7"
+    },
+    {
+      "file": "screens/08-admin-genres.png",
+      "title": "Genre management",
+      "route": "/admin/genres",
+      "pixels": [
+        1513,
+        1040
+      ],
+      "sha256": "8dd1f50fadf0ba10f57fa90dd4631f4b25ad4642ede0b5213738436d8927714c"
+    }
+  ],
+  "assets": [
+    {
+      "file": "assets/frekvencija-logo-approved.png",
+      "pixels": [
+        2172,
+        724
+      ],
+      "sha256": "d8f40d13d683f6717d51743549267bfe583c7f96e75a80f364165d5fb78e7a6e"
+    },
+    {
+      "file": "assets/frekvencija-logo-on-dark.png",
+      "pixels": [
+        2172,
+        724
+      ],
+      "sha256": "e48203b2416001a90a8d9aba2051de4aa3b7edf25763be9850460ca7dff0a5b9"
+    },
+    {
+      "file": "assets/venue-hero.png",
+      "pixels": [
+        1536,
+        1024
+      ],
+      "sha256": "7a936a73a64161452b0e8d84af4d421ecf41b363defef4224e3f14c4440bb453"
+    }
+  ]
+}

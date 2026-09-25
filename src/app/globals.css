@@ -1,0 +1,415 @@
+@import "tailwindcss";
+
+/* Research notes contain class-like words; keep them out of the generated CSS. */
+@source not "../../docs";
+
+/*
+ * Frekvencija design tokens (dark-only UI; palette from the approved design: page #0B1110, surface #15201C, border #26382F, accent #19B882, text #F4F5EE, muted #A0B2A8).
+ * Every token becomes a utility: --color-surface-2 → bg-surface-2 / text-… / border-…,
+ * --radius-card → rounded-card, --shadow-overlay → shadow-overlay, --animate-eq → animate-eq.
+ * Contrast (WCAG): fg-muted ≥ 7:1 and fg-subtle ≥ 4.5:1 on surface-2; accent-fg on accent ≈ 7.5:1;
+ * white on danger-solid ≈ 4.8:1; border-input ≥ 3:1 on every surface a control sits on (canvas,
+ * sidebar, control, surface, surface-2); the focus ring #5fe0b0 ≥ 8:1 on all of them.
+ *
+ * Also defined below: typography utilities (eyebrow, page-title, hero-title, section-title), the
+ * notch-safe page gutter (px-page, 16/24/32px via --page-gutter), safe-area paddings (pt-safe,
+ * pb-safe, pl-safe, pr-safe), the `short:` variant for short viewports, --shell-sidebar-w (240px)
+ * and the scroll-padding fed by <AppShell>'s --shell-header-h / --shell-bottom-h.
+ */
+
+/*
+ * Short viewports (≤ 512px tall): a landscape phone, or a laptop/desktop zoomed to 200–400%. The
+ * app shell stops pinning its top bar, player bar and tab bar there, so page content keeps the whole
+ * height (WCAG 1.4.10 reflow); `short:static` on a sticky bar lets it scroll with the page.
+ */
+@custom-variant short (@media (max-height: 32rem));
+@theme {
+  /* Surfaces: charcoal, from page background up to pressed controls. */
+  --color-canvas: #0b1110;
+  /* App-shell sidebars (venue + admin) and the mobile top/bottom bars. */
+  --color-sidebar: #0e1714;
+  --color-surface: #15201c;
+  --color-surface-2: #1a2823;
+  --color-surface-3: #22332c;
+  /* Text-field wells (inputs, selects, search): a step darker than the cards they sit on. */
+  --color-control: #101a16;
+  /* Hairlines between cards, rows and sections (decorative, not a control boundary). */
+  --color-border: #26382f;
+  --color-border-strong: #365044;
+  /*
+   * Boundary of text fields and other form controls (Input, Textarea, Select, SearchInput,
+   * PasswordInput, checkbox tiles, the switch track). WCAG 1.4.11 asks 3:1 for the edge that shows
+   * where a field is; the #26382f hairline is only 1.35:1 on a card. #5b7a6c: 3.54:1 on surface
+   * #15201c, 4.03:1 on canvas #0b1110, 3.86:1 on sidebar, 3.76:1 on the control well #101a16,
+   * 3.24:1 on surface-2. Hover #6b8a7c: 4.42:1 on surface. Keep this token for controls only.
+   */
+  --color-border-input: #5b7a6c;
+  --color-border-input-hover: #6b8a7c;
+
+  /* Text. */
+  --color-fg: #f4f5ee;
+  --color-fg-muted: #a0b2a8;
+  --color-fg-subtle: #8a9c93;
+
+  /* Restrained emerald accent. Solid accent backgrounds carry dark text (accent-fg). */
+  --color-accent: #19b882;
+  --color-accent-hover: #2fcf97;
+  --color-accent-active: #139a6c;
+  --color-accent-fg: #041d13;
+  /* Accent-coloured text and icons on dark surfaces. */
+  --color-accent-text: #3fd19c;
+
+  /* Status tones (text/icon colours; use /10–/30 opacity for tinted backgrounds). */
+  --color-success: #34d399;
+  --color-warning: #d9a44c;
+  --color-danger: #e88383;
+  --color-danger-solid: #dc2626;
+  --color-danger-solid-hover: #b91c1c;
+  --color-info: #60a5fa;
+
+  --color-ring: #5fe0b0;
+
+  --radius-control: 10px;
+  --radius-card: 12px;
+
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px -20px rgb(0 0 0 / 0.8);
+  --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.04), 0 24px 64px -16px rgb(0 0 0 / 0.85);
+
+  --animate-eq: eq-bar 1s ease-in-out infinite;
+  --animate-toast-in: toast-in 160ms ease-out;
+  --animate-progress-indeterminate: progress-indeterminate 1.4s ease-in-out infinite;
+  --animate-menu-in: menu-in 120ms ease-out;
+  --animate-drawer-in-right: drawer-in-right 200ms ease-out;
+  --animate-drawer-in-left: drawer-in-left 200ms ease-out;
+  --animate-drawer-in-bottom: drawer-in-bottom 200ms ease-out;
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes drawer-in-right {
+    from {
+      transform: translateX(24px);
+      opacity: 0.6;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes drawer-in-left {
+    from {
+      transform: translateX(-24px);
+      opacity: 0.6;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes drawer-in-bottom {
+    from {
+      transform: translateY(24px);
+      opacity: 0.6;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+
+  @keyframes eq-bar {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes progress-indeterminate {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
+/* next/font exposes Inter (self-hosted at build time) as a CSS variable on <html>; the fallbacks keep a
+   sans-serif stack where it is absent (global-error renders its own document). */
+@theme inline {
+  --font-sans: var(--font-inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    /* Main content side padding: 16px mobile, 24px tablet (≥640), 32px desktop (≥1024). */
+    --page-gutter: 1rem;
+    /* Desktop app-shell sidebar width. */
+    --shell-sidebar-w: 15rem;
+  }
+
+  @media (width >= 40rem) {
+    :root {
+      --page-gutter: 1.5rem;
+    }
+  }
+
+  @media (width >= 64rem) {
+    :root {
+      --page-gutter: 2rem;
+    }
+  }
+
+  html {
+    color-scheme: dark;
+    background-color: var(--color-canvas);
+    scrollbar-color: var(--color-border-strong) var(--color-canvas);
+    -webkit-tap-highlight-color: transparent;
+    /*
+     * <AppShell> measures its pinned top bar and bottom stack (player bar + tab bar) into these
+     * variables (0 while they scroll with the page on short viewports), so keyboard focus and
+     * #anchor jumps never land underneath them (WCAG 2.4.11).
+     */
+    scroll-padding-top: calc(var(--shell-header-h, 0px) + 0.5rem);
+    scroll-padding-bottom: calc(var(--shell-bottom-h, 0px) + 0.5rem);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+  }
+
+  /* One consistent, clearly visible keyboard focus indicator for every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: rgb(25 184 130 / 0.35);
+    color: var(--color-fg);
+  }
+
+  /* A modal <dialog> does not stop the page behind it from scrolling. */
+  html:has(dialog:modal) {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /*
+   * Styled native range input (used by <Slider>; the player volume control may reuse it).
+   * Set --range-progress (e.g. style="--range-progress: 60%") to paint the filled part in WebKit;
+   * Firefox paints it natively via ::-moz-range-progress.
+   */
+  .ui-range {
+    --range-progress: 0%;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 100%;
+    height: 1.75rem;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ui-range:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* The focus indicator is the ring around the thumb (below), not an outline around the track. */
+  .ui-range:focus-visible {
+    outline: none;
+  }
+
+  /* Forced colours (Windows contrast themes) drop box-shadows, and with them the thumb ring. */
+  @media (forced-colors: active) {
+    .ui-range:focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+
+  .ui-range::-webkit-slider-runnable-track {
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      var(--color-accent) var(--range-progress),
+      var(--color-surface-3) var(--range-progress)
+    );
+  }
+
+  .ui-range::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    width: 1.25rem;
+    height: 1.25rem;
+    /* Centre the 20px thumb on the 6px track. */
+    margin-top: -0.4375rem;
+    border: 2px solid var(--color-accent);
+    border-radius: 9999px;
+    background: var(--color-fg);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  .ui-range:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 3px var(--color-canvas),
+      0 0 0 5px var(--color-ring);
+  }
+
+  .ui-range::-moz-range-track {
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--color-surface-3);
+  }
+
+  .ui-range::-moz-range-progress {
+    height: 0.375rem;
+    border-radius: 9999px;
+    background: var(--color-accent);
+  }
+
+  .ui-range::-moz-range-thumb {
+    box-sizing: border-box;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--color-accent);
+    border-radius: 9999px;
+    background: var(--color-fg);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+
+  .ui-range:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 3px var(--color-canvas),
+      0 0 0 5px var(--color-ring);
+  }
+}
+
+/*
+ * Typography helpers (sizes follow design/CLAUDE-HANDOFF.md). They set size/weight/tracking only, never
+ * colour, so combine them with a text colour utility (eyebrows are normally `text-fg-muted`).
+ */
+
+/* 12px uppercase label above a title: "YOUR STATION", "NOW PLAYING", "ADMIN WORKSPACE". Write the
+   text in sentence case; the transform keeps screen readers from spelling it out. */
+@utility eyebrow {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Page title (the page's h1): 30px mobile, 36px tablet, 42px desktop. */
+@utility page-title {
+  font-size: 1.875rem;
+  line-height: 1.12;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+
+  @media (width >= 40rem) {
+    font-size: 2.25rem;
+  }
+
+  @media (width >= 64rem) {
+    font-size: 2.625rem;
+    line-height: 1.08;
+  }
+}
+
+/* Public hero headline: 40px mobile, 56px tablet, 72px wide desktop. */
+@utility hero-title {
+  font-size: 2.5rem;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+
+  @media (width >= 48rem) {
+    font-size: 3.5rem;
+  }
+
+  @media (width >= 80rem) {
+    font-size: 4.5rem;
+    line-height: 1.02;
+  }
+}
+
+/* Section / card heading: 20px, 24px from tablet up. */
+@utility section-title {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+
+  @media (width >= 40rem) {
+    font-size: 1.5rem;
+  }
+}
+
+/* Main-content side padding (16/24/32px) that also clears a landscape phone's notch. */
+@utility px-page {
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right, 0px));
+}
+
+/* Safe-area insets (the root viewport uses viewport-fit=cover). */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Minimal motion for people who ask for it: animations stop, transitions become instant. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,18 @@
+/* Frekvencija design tokens. Use semantic HTML and responsive components. */
+:root {
+  --color-page: #0B1110;
+  --color-sidebar: #0E1714;
+  --color-surface: #15201C;
+  --color-border: #26382F;
+  --color-accent: #19B882;
+  --color-text: #F4F5EE;
+  --color-muted: #A0B2A8;
+  --color-on-accent: #041D13;
+  --color-warning: #D9A44C;
+  --color-error: #E88383;
+  --radius-card: 12px;
+  --radius-control: 10px;
+  --sidebar-width: 240px;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+

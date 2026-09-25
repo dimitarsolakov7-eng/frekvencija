@@ -1,0 +1,47 @@
+{
+  "name": "venue-radio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "demo:audio": "tsx scripts/generate-demo-audio.ts",
+    "seed:dev": "tsx scripts/seed-dev.ts",
+    "admin:create": "tsx scripts/create-admin.ts",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "brand:assets": "tsx scripts/generate-brand-assets.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.1",
+    "lucide-react": "1.48.0",
+    "music-metadata": "11.16.1",
+    "next": "16.3.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@breezystack/lamejs": "1.2.7",
+    "@electric-sql/pglite": "0.5.8",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "24.13.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.6",
+    "tailwindcss": "^4",
+    "tsx": "4.23.15",
+    "typescript": "^5",
+    "vitest": "5.0.1"
+  },
+  "engines": {
+    "node": "^22.13.0 || ^24.0.0 || >=26.0.0"
+  }
+}
