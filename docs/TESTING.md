@@ -57,6 +57,9 @@ Run on 2026-10-06 (Windows 11, Node 24.19):
   announcements, media previews).
 - `npm run seed:dev -- --yes --allow-remote` loaded 9 genres, 21 synthetic tracks, EmeraldBar and
   Hotel Aurora, and 6 approved announcements with audio; venue sign-in reached /radio.
+- **End-to-end playback confirmed by the owner** (after the fix below): signed in as EmeraldBar on the
+  hosted project, chose House, pressed Start Radio — welcome announcement, songs, the venue's own
+  station announcement after the configured number of songs, then music continued.
 - Live testing found one bug the unit tests could not: the venue shell imported its link list from a
   "use client" module, so on the real /radio page every venue link was undefined and the page crashed
   ("Failed prop type: href … undefined"). Fixed (`src/components/player/venue-links.ts`) and guarded by
