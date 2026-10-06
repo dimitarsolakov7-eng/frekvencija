@@ -14,7 +14,8 @@ import type { PlayerBusiness } from "@/lib/api/contracts";
 import { PlayerBar } from "./PlayerBar";
 import { venueInitial } from "./player-view";
 import { VenueAccountMenu } from "./VenueAccountMenu";
-import { VENUE_LINKS, VenueShellProvider, type VenueLinks } from "./venue-shell-context";
+import { VENUE_LINKS, type VenueLinks } from "./venue-links";
+import { VenueShellProvider } from "./venue-shell-context";
 import { VenueSignOutButton } from "./VenueSignOutButton";
 
 export interface VenueAppShellProps {

@@ -38,7 +38,7 @@ beforeEach(() => {
   vi.spyOn(console, "info").mockImplementation(() => undefined);
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://abc.supabase.co");
   vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
-  vi.stubEnv("SUPABASE_SECRET_KEY", "fake_secret_test");
+  vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_test");
   // Client-IP policy: nothing configured (untrusted, right-most X-Forwarded-For entry).
   vi.stubEnv("CLIENT_IP_HEADER", "");
   vi.stubEnv("TRUSTED_PROXY_HOPS", "");

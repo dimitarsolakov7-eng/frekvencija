@@ -56,9 +56,22 @@ cp .env.example .env.local
 
 ## 4. Apply the database migrations
 
-The app needs **every** file in `supabase/migrations/`, applied in filename order. Without the Supabase
-CLI, open **SQL Editor** in the dashboard and run each file in order. Paste the full file contents and
-click **Run**:
+The app needs **every** file in `supabase/migrations/`, applied in filename order.
+
+**Easiest: `npm run db:migrate`.** Add your database password (the one chosen when creating the
+project; reset it under **Project Settings → Database** if needed) to `.env.local`:
+
+```
+SUPABASE_DB_PASSWORD=your-database-password
+```
+
+Then run `npm run db:migrate`. It finds the right connection host automatically (optionally set
+`SUPABASE_DB_REGION`, e.g. `eu-west-1`, or a full `SUPABASE_DB_URL` from **Connect → Session pooler**),
+applies each pending file once and records it in `supabase_migrations.schema_migrations` — the same
+table the Supabase CLI uses. `npm run db:migrate -- --status` lists applied and pending files.
+
+**Alternatively, by hand:** open **SQL Editor** in the dashboard and run each file in order. Paste the
+full file contents and click **Run**:
 
 1. `supabase/migrations/20260925000100_core_schema.sql` — tables, enums, triggers, rate-limit function
 2. `supabase/migrations/20260925000200_access_control.sql` — helper functions, grants, Row Level Security policies

@@ -8,6 +8,28 @@ import { useEffect, useRef, type RefObject } from "react";
  * where the admin has to act next.
  */
 
+/** Controls marked invalid by <Field> (aria-invalid) that can take focus. */
+export const INVALID_CONTROL_SELECTOR = '[aria-invalid="true"]:not([disabled])';
+
+interface Focusable {
+  focus: () => void;
+}
+
+/** Focuses the first invalid control in `form`, else `fallback`; returns what received focus. */
+export function focusFirstProblem<T extends Focusable>(
+  form: { querySelector: (selector: string) => T | null } | null,
+  fallback: T | null,
+): T | null {
+  const target = form?.querySelector(INVALID_CONTROL_SELECTOR) ?? fallback;
+  target?.focus();
+  return target;
+}
+
+/** Focus is lost when nothing, or only the page body, has it (e.g. its element became disabled). */
+export function focusWasLost(active: Element | null, body: Element | null): boolean {
+  return active === null || active === body;
+}
+
 /**
  * After a failed submit (a new result with `ok: false`), focuses the first invalid field in `form`,
  * or `fallback` (the form's message, focusable with tabIndex={-1}) when no field is marked invalid.
@@ -21,22 +43,19 @@ export function useFocusAfterFailure(
   const { ok, nonce } = result;
   useEffect(() => {
     if (ok || nonce === undefined) return;
-    const invalid = form.current?.querySelector<HTMLElement>('[aria-invalid="true"]:not([disabled])');
-    (invalid ?? fallback.current)?.focus();
+    focusFirstProblem<HTMLElement>(form.current, fallback.current);
   }, [ok, nonce, form, fallback]);
 }
 
 /**
  * A submit button is disabled while its form saves, and a disabled element loses focus. When the
- * save ends with focus lost (on the page body), puts it back on `target`.
+ * save ends with focus lost, puts it back on `target`.
  */
 export function useRestoreFocusAfterPending(pending: boolean, target: RefObject<HTMLElement | null>): void {
   const wasPending = useRef(pending);
   useEffect(() => {
     const finished = wasPending.current && !pending;
     wasPending.current = pending;
-    if (!finished) return;
-    const active = document.activeElement;
-    if (!active || active === document.body) target.current?.focus();
+    if (finished && focusWasLost(document.activeElement, document.body)) target.current?.focus();
   }, [pending, target]);
 }

@@ -63,14 +63,13 @@ describe("TrackTable selection cells (A11Y-12)", () => {
     }),
   );
 
-  it("puts every checkbox in a label that fills its whole cell, so a near miss toggles it instead of opening the editor", () => {
+  it("puts every checkbox in a 48×44px label that also covers the rest of its cell, so a near miss toggles it instead of opening the editor", () => {
+    const labelClass = "flex h-11 w-12 cursor-pointer items-center justify-center after:absolute after:inset-0 after:content-[&#x27;&#x27;]";
     const cell = (tag: "td" | "th", label: string) =>
-      new RegExp(
-        `<${tag} [^>]*class="[^"]*\\brelative w-12\\b[^"]*"[^>]*><label class="absolute inset-0 flex cursor-pointer items-center justify-center"><input type="checkbox" aria-label="${label}"`,
-      );
+      new RegExp(`<${tag} [^>]*class="[^"]*\\brelative w-12 px-0!"[^>]*><label class="${labelClass.replace(/[[\]]/g, "\\$&")}"><input type="checkbox" aria-label="${label}"`);
     expect(html).toMatch(cell("th", "Select all tracks on this page"));
     for (const track of tracks) expect(html).toMatch(cell("td", `Select ${track.title}`));
-    expect(html.match(/<label class="absolute inset-0 flex cursor-pointer items-center justify-center">/g)).toHaveLength(tracks.length + 1);
+    expect(html.split(`<label class="${labelClass}">`)).toHaveLength(tracks.length + 2);
   });
 
   it("keeps the 20px box itself", () => {

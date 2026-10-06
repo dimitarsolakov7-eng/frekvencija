@@ -50,12 +50,14 @@ export interface TrackTableProps {
 const INTERACTIVE = "button, a, input, label, select, textarea, [role='menu'], [role='menuitem'], [popover]";
 
 /**
- * The selection column: the 20px checkbox sits in a label that fills the whole cell (48px wide, the
- * full row or header height), so a tap anywhere in the cell toggles it — a ≥44×44px target — and a
- * near miss never opens the track editor (labels are INTERACTIVE).
+ * The selection column: the 20px checkbox sits in a 48×44px label (in the flow, so the table never
+ * squeezes the column below that on narrow screens) whose ::after covers the rest of the cell. A tap
+ * anywhere in the cell toggles the box — a ≥44×44px target — and a near miss never opens the track
+ * editor (labels are INTERACTIVE).
  */
-const CHECK_CELL = "relative w-12";
-const CHECK_LABEL = "absolute inset-0 flex cursor-pointer items-center justify-center";
+const CHECK_CELL = "relative w-12 px-0!";
+const CHECK_LABEL =
+  "flex h-11 w-12 cursor-pointer items-center justify-center after:absolute after:inset-0 after:content-['']";
 const CHECKBOX = "size-5 cursor-pointer rounded accent-accent";
 
 /** First genre's artwork (uploaded cover or default), or a neutral tile for a track without a genre. */

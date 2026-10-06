@@ -1,16 +1,9 @@
 "use client";
 
 import { createContext, use, type ReactNode } from "react";
-import type { Route } from "next";
+import { VENUE_LINKS, type VenueLinks } from "./venue-links";
 
-/** Where the venue navigation points. The dev lab and previews swap in their own routes. */
-export interface VenueLinks {
-  radio: Route;
-  account: Route;
-  help: Route;
-}
-
-export const VENUE_LINKS: VenueLinks = { radio: "/radio", account: "/account", help: "/help" };
+export type { VenueLinks } from "./venue-links";
 
 export interface VenueShellInfo {
   links: VenueLinks;

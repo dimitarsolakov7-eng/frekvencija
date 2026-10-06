@@ -36,7 +36,7 @@ const { AccessRequestsView } = await import("@/components/admin/businesses/Acces
 const { BusinessDetailPlaceholder, BusinessDetailSkeleton, BusinessNotFound } = await import(
   "@/components/admin/businesses/DetailPlaceholders"
 );
-const { toAccessRequestPrefill } = await import("@/components/admin/businesses/access-request-rules");
+const { ACCESS_REQUEST_CONFLICT_MESSAGE, toAccessRequestPrefill } = await import("@/components/admin/businesses/access-request-rules");
 const { SettingsForm } = await import("@/components/admin/settings/SettingsForm");
 const { IntegrationStatusCard } = await import("@/components/admin/settings/IntegrationStatusCard");
 const { default: AdminNotFound } = await import("@/app/admin/not-found");
@@ -103,8 +103,18 @@ describe("business list", () => {
     const html = render(directory(createElement("p", null, "DETAIL")), `${BASE}/${fixtures.EMERALDBAR_ID}`);
     expect(hasTag(html, "a", [`href="${BASE}/${fixtures.EMERALDBAR_ID}"`, 'aria-current="page"'])).toBe(true);
     expect(hasTag(html, "section", ['aria-label="Business list"', "hidden lg:block"])).toBe(true);
-    expect(html).toContain("All businesses");
+    expect(hasTag(html, "a", [`href="${BASE}"`, "min-h-11", "lg:hidden"])).toBe(true);
+    expect(html).toContain("Back to list");
     expect(html).toContain("DETAIL");
+  });
+
+  // A11Y-14: the targets focus moves to when the list and the detail replace each other.
+  it("marks every row link and makes the list focusable for the way back", () => {
+    const html = render(directory(createElement("p", null, "DETAIL")), `${BASE}/${fixtures.EMERALDBAR_ID}`);
+    for (const id of [fixtures.EMERALDBAR_ID, fixtures.HOTEL_AURORA_ID, fixtures.CAFE_CENTRAL_ID]) {
+      expect(hasTag(html, "a", [`href="${BASE}/${id}"`, `data-business-row="${id}"`])).toBe(true);
+    }
+    expect(hasTag(html, "section", ['aria-label="Business list"', 'tabindex="-1"'])).toBe(true);
   });
 
   it("has honest empty and error states", () => {
@@ -152,6 +162,25 @@ describe("business detail panel", () => {
     expect(html).toContain('href="/admin/genres"');
     expect(html).toContain("Replace logo");
     expect(html).toContain(`aria-label="More actions for EmeraldBar"`);
+  });
+
+  it("gives the venue heading a focus target, and shows no conflict notice while nothing changed elsewhere", () => {
+    const html = panel(fixtures.EMERALDBAR_ID);
+    expect(hasTag(html, "h2", [`data-detail-heading="${fixtures.EMERALDBAR_ID}"`, 'tabindex="-1"'])).toBe(true);
+    expect(html).not.toContain("Changed elsewhere while you were editing");
+    // The controlled fields carry the saved values, genre ticks included.
+    expect(hasTag(html, "input", ['name="namePronunciation"', 'value="Emerald Bar"'])).toBe(true);
+    expect(hasTag(html, "select", ['name="isActive"'])).toBe(true);
+    expect(html).toMatch(/<option value="true" selected="">Active<\/option>/);
+    expect(hasTag(html, "input", ['name="genreIds"', "checked"])).toBe(true);
+  });
+
+  it("classifies announcements like the studio: switched-off approvals are not awaiting review", () => {
+    const html = panel(fixtures.EMERALDBAR_ID);
+    expect(html).toContain(">Deactivated<");
+    expect(html).toContain("Approved, but switched off");
+    expect(html).toContain("Audio ready, not approved yet");
+    expect(html).toContain("Flagged after a branding change");
   });
 
   it("renders genre access as tiles: exclusive ones tickable, shared ones included and locked", () => {
@@ -220,6 +249,32 @@ describe("add business form", () => {
     expect(html).toContain("Create business");
   });
 
+  // A11Y-07: submitted from onSubmit (React never resets or re-mounts it), with a focusable message.
+  it("keeps the form free of a form action and gives its message and heading focus targets", () => {
+    const html = render(
+      directory(
+        createElement(NewBusinessForm, {
+          action: async () => ({ ok: false, message: null, fieldErrors: {}, created: null, link: null, warnings: [] }),
+          genres: fixtures.fixtureGenres(),
+          prefill: null,
+          notices: [],
+          defaultFrequency: { everyNTracks: 4, fromSettings: true },
+          invitesUnavailableReason: null,
+          basePath: BASE,
+          settingsHref: "/admin/settings",
+          genresHref: "/admin/genres",
+        }),
+      ),
+      `${BASE}/new`,
+    );
+    const form = html.match(/<form[^>]*>/)?.[0] ?? "";
+    expect(form).not.toContain("action=");
+    expect(hasTag(html, "h2", ['data-detail-heading="new"', 'tabindex="-1"'])).toBe(true);
+    expect(hasTag(html, "div", ['tabindex="-1"', "sr-only"])).toBe(true);
+    expect(hasTag(html, "div", ['aria-live="polite"', 'aria-atomic="true"'])).toBe(true);
+    expect(hasTag(html, "button", ['type="submit"'])).toBe(true);
+  });
+
   it("switches the invitation off when invitations are unavailable", () => {
     const html = render(
       directory(
@@ -269,6 +324,64 @@ describe("access requests", () => {
     expect(html).toContain('maxLength="2000"');
     // Closed requests are not offered for creation.
     expect((html.match(/Create business from request/g) ?? []).length).toBe(2);
+  });
+
+  // REQ-01 / A11Y-08: every card keeps a polite region for a failed status change and its notes
+  // message, present before any message, so both are announced when they appear.
+  it("renders each card's message regions up front", () => {
+    const html = render(
+      createElement(AccessRequestsView, {
+        requests: fixtures.FIXTURE_REQUESTS,
+        counts: fixtures.fixtureRequestCounts(),
+        filter: "all",
+        truncated: false,
+        basePath: BASE,
+        requestsPath: `${BASE}/requests`,
+        actions: { updateAccessRequestStatus: noop, saveAccessRequestNotes: noop },
+      }),
+    );
+    const cards = fixtures.FIXTURE_REQUESTS.length;
+    const statusRegions = html.match(/<div[^>]*tabindex="-1"[^>]*aria-live="polite"[^>]*aria-atomic="true"[^>]*>/g) ?? [];
+    expect(statusRegions.length).toBe(cards);
+    expect((html.match(/>Save notes</g) ?? []).length).toBe(cards);
+    expect(html.match(/<form[^>]*>/g)?.every((form) => !form.includes("action="))).toBe(true);
+    expect(hasTag(html, "h2", ['tabindex="-1"'])).toBe(true);
+    expect(html).not.toContain("The status was not changed");
+    expect(html).not.toContain("was not changed");
+    expect(html).not.toContain("Notes changed elsewhere");
+  });
+
+  // REQ-01: the list keeps failed status changes. A listed request shows its problem on its card;
+  // one the refresh moved out of the list is shown above the list, with a way to dismiss it.
+  it("shows a failed status change on its card, and one whose request left the list above it", () => {
+    const html = render(
+      createElement(AccessRequestsView, {
+        requests: fixtures.FIXTURE_REQUESTS,
+        counts: fixtures.fixtureRequestCounts(),
+        filter: "all",
+        truncated: false,
+        basePath: BASE,
+        requestsPath: `${BASE}/requests`,
+        actions: { updateAccessRequestStatus: noop, saveAccessRequestNotes: noop },
+        initialProblems: fixtures.FIXTURE_REQUEST_PROBLEMS,
+      }),
+    );
+    const articles = html.split("<article").slice(1);
+    expect(articles).toHaveLength(fixtures.FIXTURE_REQUESTS.length);
+    const kej = articles.find((article) => article.includes(">Bar Kej</h2>")) ?? "";
+    expect(kej).toContain("The status was not changed");
+    expect(kej).toContain(ACCESS_REQUEST_CONFLICT_MESSAGE);
+    for (const other of articles.filter((article) => article !== kej)) expect(other).not.toContain("The status was not changed");
+    expect((html.match(/The status was not changed/g) ?? []).length).toBe(1);
+
+    const list = html.indexOf('<ul aria-label="Access requests"');
+    const orphan = html.indexOf("The request from Pekara Zora was not changed");
+    expect(orphan).toBeGreaterThan(-1);
+    expect(orphan).toBeLessThan(list);
+    expect(html).toContain("Someone changed this request in the meantime. The list has been refreshed; check it and try again. It is no longer in this list.");
+    expect(html).toContain(">Dismiss<");
+    // The orphaned problem's region is the focus target once its card is gone, and visible now.
+    expect(html).toMatch(/<div[^>]*tabindex="-1"[^>]*aria-live="polite"[^>]*class="[^"]*grid gap-3[^"]*"[^>]*>/);
   });
 
   it("has an honest empty state per filter", () => {
@@ -338,6 +451,34 @@ describe("settings", () => {
     );
     expect(html).toContain("The settings row is missing");
     expect(hasTag(html, "button", ['type="submit"', 'disabled=""'])).toBe(true);
+  });
+
+  // A11Y-07: one form for the life of the page, submitted from onSubmit, with a focusable message.
+  it("renders a form without a form action and a focusable message region", () => {
+    const html = render(
+      createElement(SettingsForm, {
+        settings: {
+          contactEmail: "hello@frekvencija.online",
+          contactPhone: null,
+          privacyPolicy: null,
+          termsOfService: null,
+          defaultAnnouncementEveryNTracks: 4,
+          updatedAt: null,
+          updatedByEmail: null,
+          rowMissing: false,
+        },
+        action: async () => ({ ok: true, message: "Saved", fieldErrors: {} }),
+        privacyHref: "/privacy",
+        termsHref: "/terms",
+      }),
+      "/admin/settings",
+    );
+    const form = html.match(/<form[^>]*>/)?.[0] ?? "";
+    expect(form).not.toContain("action=");
+    expect(hasTag(html, "div", ['tabindex="-1"', "sr-only"])).toBe(true);
+    expect(hasTag(html, "div", ['aria-live="polite"', 'aria-atomic="true"'])).toBe(true);
+    expect(hasTag(html, "button", ['type="submit"'])).toBe(true);
+    expect(hasTag(html, "button", ['type="submit"', 'disabled=""'])).toBe(false);
   });
 
   it("renders the integration status read-only", () => {

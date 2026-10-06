@@ -1,6 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { Route } from "next";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AccessRequestsView } from "@/components/admin/businesses/AccessRequestsView";
 import { toAccessRequestPrefill } from "@/components/admin/businesses/access-request-rules";
 import type {
@@ -23,24 +25,16 @@ import { UploadError } from "@/lib/uploads/client";
 import {
   EMERALDBAR_ID,
   FIXTURE_REQUEST_ID,
+  FIXTURE_REQUEST_PROBLEMS,
   FIXTURE_REQUESTS,
   fixtureDetail,
   fixtureGenres,
   fixtureListItems,
   fixtureRequestCounts,
+  parseListState,
   PREVIEW_BASE_PATH,
+  type PreviewListState,
 } from "./fixtures";
-
-export type PreviewListState = "default" | "empty" | "error" | "nokey";
-
-export interface BusinessesPreviewProps {
-  /** "" (list), a venue id, "new" or "requests". */
-  segment: string;
-  listState: PreviewListState;
-  tab: BusinessDetailTab;
-  fromRequest: boolean;
-  created: boolean;
-}
 
 const NOTE = "(Preview only: nothing was saved.)";
 const NO_KEY_REASON =
@@ -121,7 +115,8 @@ const previewUploadLogo: LogoUploader = async ({ file, signal, onPhase, onProgre
   return { logoPath: `preview/${file.name}`, logoUrl: URL.createObjectURL(file) };
 };
 
-function DetailColumn({ segment, tab, fromRequest, created, listState }: BusinessesPreviewProps) {
+/** The detail column of screen 06 for a URL segment: the placeholder, the add form or a venue. */
+function DetailColumn({ segment, tab, fromRequest, created, listState }: BusinessesPreviewDetailProps) {
   if (segment === "") return <BusinessDetailPlaceholder basePath={PREVIEW_BASE_PATH} />;
   if (segment === "new") {
     const request = fromRequest ? FIXTURE_REQUESTS.find((item) => item.id === FIXTURE_REQUEST_ID) : undefined;
@@ -156,11 +151,60 @@ function DetailColumn({ segment, tab, fromRequest, created, listState }: Busines
   );
 }
 
+/** The segment after /dev/preview/businesses/: "" (list), a venue id, "new" or "requests". */
+function segmentOf(pathname: string | null): string {
+  if (!pathname?.startsWith(`${PREVIEW_BASE_PATH}/`)) return "";
+  return decodeURIComponent(pathname.slice(PREVIEW_BASE_PATH.length + 1).split("/")[0] ?? "");
+}
+
 /**
- * The real screen-06 components with fixture data and no-op actions: the directory (list + detail
- * column), the add form and the access-request list.
+ * The list half of screen 06, rendered by the preview's layout. As in the app
+ * (src/app/admin/businesses/(directory)/layout.tsx) it stays mounted while the admin moves between
+ * venues, so the list keeps its search and focus can follow the switch. The access requests have
+ * their own page (children only).
  */
-export function BusinessesPreview(props: BusinessesPreviewProps) {
+export function BusinessesPreviewFrame({ children }: { children: ReactNode }) {
+  const segment = segmentOf(usePathname());
+  const listState = parseListState(useSearchParams()?.get("list"));
+  if (segment === "requests") return children;
+
+  const items = fixtureListItems({ statusesKnown: listState !== "nokey" });
+  const list =
+    listState === "error"
+      ? null
+      : {
+          items: listState === "empty" ? [] : items,
+          statusNote: listState === "nokey" ? NO_KEY_REASON : null,
+        };
+
+  return (
+    <BusinessesDirectory
+      key={listState}
+      list={list}
+      newRequestCount={listState === "empty" ? 0 : fixtureRequestCounts().new}
+      basePath={PREVIEW_BASE_PATH}
+      announcementsPath="/dev/preview/announcements"
+      actions={directoryActions}
+      accessUnavailableReason={listState === "nokey" ? NO_KEY_REASON : null}
+    >
+      {children}
+    </BusinessesDirectory>
+  );
+}
+
+export interface BusinessesPreviewDetailProps {
+  /** "" (list), a venue id, "new" or "requests". */
+  segment: string;
+  listState: PreviewListState;
+  tab: BusinessDetailTab;
+  fromRequest: boolean;
+  created: boolean;
+  /** Access requests only: start with failed status changes (one on a card, one that left the list). */
+  conflict: boolean;
+}
+
+/** The page half: the access-request list, or the directory's detail column. */
+export function BusinessesPreviewDetail(props: BusinessesPreviewDetailProps) {
   if (props.segment === "requests") {
     return (
       <>
@@ -170,6 +214,7 @@ export function BusinessesPreview(props: BusinessesPreviewProps) {
           description="Venues asking for their own station. Nothing is approved automatically."
         />
         <AccessRequestsView
+          key={props.conflict ? "conflict" : "default"}
           requests={FIXTURE_REQUESTS}
           counts={fixtureRequestCounts()}
           filter="all"
@@ -177,30 +222,10 @@ export function BusinessesPreview(props: BusinessesPreviewProps) {
           basePath={PREVIEW_BASE_PATH}
           requestsPath={`${PREVIEW_BASE_PATH}/requests`}
           actions={requestActions}
+          initialProblems={props.conflict ? FIXTURE_REQUEST_PROBLEMS : undefined}
         />
       </>
     );
   }
-
-  const items = fixtureListItems({ statusesKnown: props.listState !== "nokey" });
-  const list =
-    props.listState === "error"
-      ? null
-      : {
-          items: props.listState === "empty" ? [] : items,
-          statusNote: props.listState === "nokey" ? NO_KEY_REASON : null,
-        };
-
-  return (
-    <BusinessesDirectory
-      list={list}
-      newRequestCount={props.listState === "empty" ? 0 : fixtureRequestCounts().new}
-      basePath={PREVIEW_BASE_PATH}
-      announcementsPath="/dev/preview/announcements"
-      actions={directoryActions}
-      accessUnavailableReason={props.listState === "nokey" ? NO_KEY_REASON : null}
-    >
-      <DetailColumn {...props} />
-    </BusinessesDirectory>
-  );
+  return <DetailColumn {...props} />;
 }

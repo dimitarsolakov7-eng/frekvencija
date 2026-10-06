@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useConfirmDiscard } from "@/components/admin/shell/unsaved-changes";
@@ -65,15 +65,15 @@ export function useFormChangeTracking(form: RefObject<HTMLFormElement | null>) {
     if (form.current && baseline.current === null) baseline.current = snapshotForm(form.current);
   }, [form]);
 
-  const track = useCallback(() => {
+  function track() {
     if (!form.current || baseline.current === null) return;
     setDirty(snapshotForm(form.current) !== baseline.current);
-  }, [form]);
+  }
 
-  const markSaved = useCallback(() => {
+  function markSaved() {
     if (form.current) baseline.current = snapshotForm(form.current);
     setDirty(false);
-  }, [form]);
+  }
 
   return { track, markSaved, dirty };
 }

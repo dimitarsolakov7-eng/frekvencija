@@ -9,11 +9,14 @@ import {
   useRef,
   useState,
   useTransition,
+  type Dispatch,
   type FormEvent,
+  type SetStateAction,
 } from "react";
 import type { Route } from "next";
 import Link from "next/link";
 import { Building2, Inbox, Mail, Phone } from "lucide-react";
+import { useConfirmDiscard, useUnsavedChangesGuard } from "@/components/admin/shell/unsaved-changes";
 import {
   Alert,
   Button,
@@ -31,6 +34,28 @@ import { formatDateTime } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 import type { AccessRequestFilter } from "@/lib/validation/access-requests";
 import {
+  isNotesDirty,
+  markNotesSaved,
+  newNotesDraft,
+  notesNeedRebase,
+  orphanedStatusProblems,
+  rebaseNotesDraft,
+  requestCardKey,
+  setNotesValue,
+  STATUS_CHANGE_DISCARD_LABEL,
+  statusChangeDiscardMessage,
+  statusChangeLeavesList,
+  statusProblemOf,
+  statusProblemsForFilter,
+  takeSavedNotes,
+  unsavedNotesMessage,
+  withStatusProblem,
+  type NotesDraft,
+  type StatusProblem,
+  type StatusProblems,
+  type StatusProblemState,
+} from "./access-request-cards";
+import {
   ACCESS_REQUEST_STATUS_LABELS,
   ACCESS_REQUEST_STATUS_ORDER,
   ACCESS_REQUEST_STATUS_TONES,
@@ -40,7 +65,7 @@ import {
   type AccessRequestStatus,
 } from "./access-request-rules";
 import { IDLE_STATE, type AccessRequestActions, type AccessRequestNotesState } from "./action-types";
-import { businessTypeLabel } from "./business-form";
+import { businessTypeLabel, lastFormString } from "./business-form";
 import { useFocusAfterFailure, useRestoreFocusAfterPending } from "./form-focus";
 
 export interface AccessRequestsViewProps {
@@ -53,6 +78,11 @@ export interface AccessRequestsViewProps {
   /** This page, for the filter links. */
   requestsPath: string;
   actions: AccessRequestActions;
+  /**
+   * Failed status changes to start with, by request id (the development preview's conflict view
+   * shows them; normally none). Ids not in `requests` are shown above the list.
+   */
+  initialProblems?: StatusProblems;
 }
 
 const MAX_NOTES = 2000;
@@ -102,15 +132,31 @@ function StatusFilter({ requestsPath, filter, counts }: { requestsPath: string; 
 /**
  * Private notes on a request. The card stays mounted (keyed by the request id), so the "Notes saved."
  * message stays in its polite live region (A11Y-08) and nothing typed is thrown away when the list
- * refreshes. Submitted from onSubmit, so React does not reset the textarea afterwards.
+ * refreshes. The field shows the card's notes draft: untouched notes follow newer saved ones (another
+ * admin's save), typed notes are kept. Submitted from onSubmit, so React does not reset the form.
  */
-function NotesForm({ request, saveNotes }: { request: AccessRequestItem; saveNotes: AccessRequestActions["saveAccessRequestNotes"] }) {
-  const [state, formAction, pending] = useActionState(saveNotes, { ...IDLE_STATE } as AccessRequestNotesState);
-  const [length, setLength] = useState((request.adminNotes ?? "").length);
+function NotesForm({
+  request,
+  draft,
+  onDraftChange,
+  saveNotes,
+}: {
+  request: AccessRequestItem;
+  draft: NotesDraft;
+  onDraftChange: Dispatch<SetStateAction<NotesDraft>>;
+  saveNotes: AccessRequestActions["saveAccessRequestNotes"];
+}) {
+  const [state, formAction, pending] = useActionState(async (previous: AccessRequestNotesState, formData: FormData) => {
+    const submitted = lastFormString(formData, "adminNotes");
+    const result = await saveNotes(previous, formData);
+    if (result.ok) onDraftChange((current) => markNotesSaved(current, submitted));
+    return result;
+  }, { ...IDLE_STATE } as AccessRequestNotesState);
   const id = useId();
   const formRef = useRef<HTMLFormElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
+  const fieldRef = useRef<HTMLTextAreaElement>(null);
   useFocusAfterFailure(state, formRef, messageRef);
   useRestoreFocusAfterPending(pending, submitRef);
 
@@ -121,22 +167,48 @@ function NotesForm({ request, saveNotes }: { request: AccessRequestItem; saveNot
     startTransition(() => formAction(formData));
   }
 
+  function takeSaved() {
+    onDraftChange(takeSavedNotes);
+    // The notice (and its button) goes away: continue in the field.
+    fieldRef.current?.focus();
+  }
+
   return (
     <form ref={formRef} onSubmit={handleSubmit} aria-busy={pending || undefined} className="grid gap-2">
       <input type="hidden" name="requestId" value={request.id} />
+      {/* A polite live region that is always present, so the notice is announced when it appears. */}
+      <div aria-live="polite" className={draft.changedElsewhere ? undefined : "sr-only"}>
+        {draft.changedElsewhere && (
+          <Alert
+            role="none"
+            tone="warning"
+            title="Notes changed elsewhere while you were editing"
+            description="Someone saved other notes on this request since you started typing. Your text is kept: saving replaces theirs."
+            action={
+              <Button variant="secondary" size="sm" onClick={takeSaved}>
+                Use the saved notes
+              </Button>
+            }
+          />
+        )}
+      </div>
       <Field
         id={`${id}notes`}
         label="Notes"
-        hint={`Private to admins. ${numberFormat.format(length)} / ${numberFormat.format(MAX_NOTES)}`}
+        hint={`Private to admins. ${numberFormat.format(draft.value.length)} / ${numberFormat.format(MAX_NOTES)}`}
         error={state.fieldErrors.adminNotes}
         optional
       >
         <Textarea
+          ref={fieldRef}
           name="adminNotes"
           rows={2}
           maxLength={MAX_NOTES}
-          defaultValue={request.adminNotes ?? ""}
-          onChange={(event) => setLength(event.currentTarget.value.length)}
+          value={draft.value}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            onDraftChange((current) => setNotesValue(current, value));
+          }}
           placeholder="e.g. Called on Monday, wants a demo."
         />
       </Field>
@@ -152,18 +224,18 @@ function NotesForm({ request, saveNotes }: { request: AccessRequestItem; saveNot
   );
 }
 
-/** A status change that failed; kept by the list, so it survives the refresh that follows it. */
-interface StatusProblem {
-  businessName: string;
-  message: string;
-}
-
+/**
+ * One request. Keyed by the request id only (requestCardKey), so it stays mounted across the refresh
+ * after each save. Its failed status change comes from the list (`problem`), never from state of its
+ * own: the refresh can take the card out of the list, and the list still shows the problem then.
+ */
 function RequestCard({
   request,
   basePath,
   actions,
   problem,
   onProblem,
+  leavesList,
 }: {
   request: AccessRequestItem;
   basePath: string;
@@ -171,11 +243,19 @@ function RequestCard({
   /** Why the last status change of this request failed, or null. */
   problem: string | null;
   onProblem: (requestId: string, problem: StatusProblem | null) => void;
+  /** A status change takes the request out of this (filtered) list. */
+  leavesList: boolean;
 }) {
   const toast = useToast();
+  const confirmDiscard = useConfirmDiscard();
   const [pending, startStatusChange] = useTransition();
   const [running, setRunning] = useState<AccessRequestStatus | null>(null);
   const [settled, setSettled] = useState(0);
+  const [notes, setNotes] = useState(() => newNotesDraft(request.adminNotes));
+  // Newer saved notes (the list was refreshed): merge them in without losing what the admin typed.
+  if (notesNeedRebase(notes, request.adminNotes)) setNotes(rebaseNotesDraft(notes, request.adminNotes));
+  const notesDirty = isNotesDirty(notes);
+  useUnsavedChangesGuard(notesDirty, { message: unsavedNotesMessage(request.businessName) });
   const headingId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const problemRef = useRef<HTMLDivElement>(null);
@@ -190,7 +270,19 @@ function RequestCard({
     (problem ? problemRef.current : headingRef.current)?.focus();
   }, [settled, problem]);
 
-  function change(status: AccessRequestStatus) {
+  async function change(status: AccessRequestStatus) {
+    if (pending) return;
+    // The card is about to leave this list, and the notes typed on it with it.
+    if (
+      leavesList &&
+      notesDirty &&
+      !(await confirmDiscard({
+        message: statusChangeDiscardMessage(request.businessName),
+        confirmLabel: STATUS_CHANGE_DISCARD_LABEL,
+      }))
+    ) {
+      return;
+    }
     onProblem(request.id, null);
     setRunning(status);
     startStatusChange(async () => {
@@ -259,7 +351,7 @@ function RequestCard({
           </div>
         </dl>
 
-        <NotesForm request={request} saveNotes={actions.saveAccessRequestNotes} />
+        <NotesForm request={request} draft={notes} onDraftChange={setNotes} saveNotes={actions.saveAccessRequestNotes} />
 
         {/* Always present, so a failed status change (e.g. someone else changed it first) is announced. */}
         <div
@@ -285,7 +377,7 @@ function RequestCard({
               variant={option.emphasis === "quiet" ? "ghost" : "secondary"}
               loading={running === option.status}
               disabled={pending}
-              onClick={() => change(option.status)}
+              onClick={() => void change(option.status)}
             >
               {option.label}
             </Button>
@@ -309,28 +401,32 @@ function RequestCard({
  * actions. Nothing is approved automatically; "Create business from request" opens a prefilled
  * add form, and creating the business marks the request approved.
  */
-export function AccessRequestsView({ requests, counts, filter, truncated, basePath, requestsPath, actions }: AccessRequestsViewProps) {
+export function AccessRequestsView({
+  requests,
+  counts,
+  filter,
+  truncated,
+  basePath,
+  requestsPath,
+  actions,
+  initialProblems,
+}: AccessRequestsViewProps) {
   // Status-change failures live here, not in the cards: when the refresh after a conflict moves the
   // request out of the current filter, its card is gone but the message is still shown (REQ-01).
-  const [problems, setProblems] = useState<Readonly<Record<string, StatusProblem>>>({});
+  const [problemState, setProblemState] = useState<StatusProblemState>(() => ({ filter, problems: initialProblems ?? {} }));
   // Another filter is another list: earlier problems belong to the list they happened in.
-  const [problemsFilter, setProblemsFilter] = useState(filter);
-  if (problemsFilter !== filter) {
-    setProblemsFilter(filter);
-    setProblems({});
-  }
-  const listed = new Set(requests.map((request) => request.id));
-  const orphaned = Object.entries(problems).filter(([id]) => !listed.has(id));
+  const current = statusProblemsForFilter(problemState, filter);
+  if (current !== problemState) setProblemState(current);
+  const problems = current.problems;
+  const orphaned = orphanedStatusProblems(problems, requests);
   const orphanRef = useRef<HTMLDivElement>(null);
   const orphanCount = orphaned.length;
+  const leavesList = statusChangeLeavesList(filter);
 
   const reportProblem = useCallback((requestId: string, problem: StatusProblem | null) => {
-    setProblems((current) => {
-      if (problem) return { ...current, [requestId]: problem };
-      if (!(requestId in current)) return current;
-      const next = { ...current };
-      delete next[requestId];
-      return next;
+    setProblemState((state) => {
+      const next = withStatusProblem(state.problems, requestId, problem);
+      return next === state.problems ? state : { ...state, problems: next };
     });
   }, []);
 
@@ -390,12 +486,13 @@ export function AccessRequestsView({ requests, counts, filter, truncated, basePa
           {requests.map((request) => (
             // Keyed by id only: a refresh (new updatedAt) must not re-mount the card and drop its messages.
             <RequestCard
-              key={request.id}
+              key={requestCardKey(request)}
               request={request}
               basePath={basePath}
               actions={actions}
-              problem={problems[request.id]?.message ?? null}
+              problem={statusProblemOf(problems, request.id)}
               onProblem={reportProblem}
+              leavesList={leavesList}
             />
           ))}
         </ul>

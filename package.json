@@ -14,7 +14,8 @@
     "seed:dev": "tsx scripts/seed-dev.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
-    "brand:assets": "tsx scripts/generate-brand-assets.ts"
+    "brand:assets": "tsx scripts/generate-brand-assets.ts",
+    "db:migrate": "tsx scripts/db-migrate.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -32,10 +33,12 @@
     "@electric-sql/pglite": "0.5.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "24.13.6",
+    "@types/pg": "8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "pg": "8.23.1",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
     "typescript": "^5",

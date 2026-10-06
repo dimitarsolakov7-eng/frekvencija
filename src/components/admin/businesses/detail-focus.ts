@@ -15,8 +15,9 @@ export type DirectoryFocusMove = { kind: "detail"; selected: string } | { kind: 
 
 /**
  * Where focus goes after the selection changed (`previous` → `selected`: a venue id, "new", or
- * null for the list alone). Nothing moves while focus is still on something visible, e.g. on a
- * desktop, where the list stays next to the detail and keeps the focused row.
+ * null for the list alone). `focusLost`: focus is on nothing, on something now hidden, or in the
+ * detail column that is being replaced. Nothing moves otherwise, e.g. on a desktop, where the list
+ * stays next to the detail and keeps the focused row.
  */
 export function directoryFocusMove(previous: string | null, selected: string | null, focusLost: boolean): DirectoryFocusMove {
   if (previous === selected || !focusLost) return null;
@@ -66,7 +67,8 @@ export function useDirectoryFocus(selected: string | null, list: RefObject<HTMLE
     const before = previous.current;
     previous.current = selected;
     const active = document.activeElement;
-    const focusLost = !active || active === document.body || !isRendered(active);
+    // Lost: on nothing, hidden with its column, or inside the detail column, whose content is replaced.
+    const focusLost = !active || active === document.body || !isRendered(active) || Boolean(detail.current?.contains(active));
     const move = directoryFocusMove(before, selected, focusLost);
     if (!move) return;
     if (move.kind === "detail") {

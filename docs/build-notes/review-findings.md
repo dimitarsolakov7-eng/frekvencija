@@ -2,6 +2,18 @@
 
 Five-dimension review + adversarial verification, 2026-09-25. Only confirmed/uncertain findings need action.
 
+## Resolution status (2026-10-06)
+
+All confirmed findings are resolved, each with regression tests: SEC-01/02, PLAY-01–06, REQ-02 (Skip
+music-only), ANN-01, UPL-01, GEN-01, NAV-01/A11Y-06 (admin unsaved-changes guard), BIZ-01/02, REQ-01
+(admin: access-request messages) + A11Y-08, A11Y-01–05, A11Y-07, A11Y-09, A11Y-11–15, and the delivery
+findings REQ-01 (docs/TESTING.md), REQ-03–REQ-07. REQ-08 and A11Y-10 were refuted by verification.
+Known follow-ups (not blocking): PLAY-01 server-side identity header; focus target after an
+access-request card disappears under a status filter; track editor Save still sends all fields.
+Found later in live testing and fixed: the venue shell imported its link list from a "use client"
+module, so every venue link was undefined on the real /radio page (guarded by
+tests/ui/server-client-boundary.test.ts).
+
 ## security
 
 ### SEC-01 — safeNextPath lets dot-segment paths through as protocol-relative URLs, so login and email-link redirects can go to another site

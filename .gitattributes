@@ -1,0 +1,12 @@
+# Keep LF line endings in the repository and in every checkout (Windows and macOS alike), so
+# source-inspecting tests and shell scripts behave the same everywhere.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.pdf binary

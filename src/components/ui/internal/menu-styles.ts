@@ -20,11 +20,13 @@ export interface MenuItemStyleOptions {
 
 /**
  * Row look of a <DropdownMenu> item: at least 44px tall; hover and the roving focus tint the row,
- * and keyboard focus adds the ring above.
+ * and keyboard focus adds the ring above. Only the tint is animated: arrow keys move focus quickly,
+ * and `transition-colors` would fade the ring in from the text colour on every step.
  */
 export function menuItemClasses({ tone = "default", disabled = false }: MenuItemStyleOptions = {}): string {
   return cn(
-    "flex min-h-11 w-full items-center gap-3 rounded-control px-3 py-2 text-left text-sm font-medium transition-colors",
+    "flex min-h-11 w-full items-center gap-3 rounded-control px-3 py-2 text-left text-sm font-medium",
+    "transition-[color,background-color]",
     "hover:bg-surface-3 focus:bg-surface-3",
     MENU_ITEM_FOCUS_RING_CLASSES,
     "[&_svg]:size-[1.125rem] [&_svg]:shrink-0",

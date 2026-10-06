@@ -14,6 +14,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: () => undefined, push: () => undefined }),
   usePathname: () => "/admin/announcements",
 }));
+const guard = vi.hoisted(() => ({ register: vi.fn() }));
+vi.mock("@/components/admin/shell/unsaved-changes", () => ({
+  useUnsavedChangesGuard: guard.register,
+  useConfirmDiscard: () => async () => true,
+}));
 
 const { ToastProvider } = await import("@/components/ui");
 const { AnnouncementsPreview } = await import("@/app/dev/preview/announcements/AnnouncementsPreview");
@@ -116,6 +121,53 @@ describe("announcements studio renders", () => {
     expect(html).toContain('<option value="custom" selected="">Custom…</option>');
     expect(hasTag(html, "input", ['name="announcementEveryNTracks"', 'type="number"', 'value="20"', 'max="50"'])).toBe(true);
     expect(html).toContain('aria-valuetext="100%"');
+  });
+
+  // A11Y-13: server field errors are linked to their controls.
+  it("settings: field errors are referenced by the invalid controls", () => {
+    const failure = {
+      ok: false,
+      message: "Check the highlighted settings.",
+      fieldErrors: {
+        announcementEveryNTracks: "Announcement interval must be at most 50.",
+        announcementVolumePercent: "Announcement volume must be at least 10.",
+      },
+    };
+    const idOf = (html: string, text: string) => html.match(new RegExp(`<p id="([^"]+)"[^>]*>${text}</p>`))?.[1];
+    const tagWith = (html: string, needles: string[]) =>
+      (html.match(/<input[^>]*>/g) ?? []).find((tag) => needles.every((needle) => tag.includes(needle))) ?? "";
+
+    const custom = render(
+      createElement(AnnouncementSettingsCard, { everyNTracks: 60, volume: 0.05, action: async () => failure, initialState: failure }),
+    );
+    const intervalErrorId = idOf(custom, "Announcement interval must be at most 50.");
+    const volumeErrorId = idOf(custom, "Announcement volume must be at least 10.");
+    expect(intervalErrorId).toBeTruthy();
+    expect(volumeErrorId).toBeTruthy();
+    const customInput = tagWith(custom, ['name="announcementEveryNTracks"', 'type="number"']);
+    expect(customInput).toContain('aria-invalid="true"');
+    expect(customInput).toMatch(new RegExp(`aria-describedby="[^"]*${intervalErrorId}`));
+    const slider = tagWith(custom, ['type="range"']);
+    expect(slider).toContain('aria-invalid="true"');
+    expect(slider).toMatch(new RegExp(`aria-describedby="[^"]*${volumeErrorId}`));
+
+    const preset = render(createElement(AnnouncementSettingsCard, { everyNTracks: 4, volume: 1, action: async () => failure, initialState: failure }));
+    const presetErrorId = idOf(preset, "Announcement interval must be at most 50.");
+    const select = preset.match(/<select[^>]*>/)?.[0] ?? "";
+    expect(select).toContain('aria-invalid="true"');
+    expect(select).toMatch(new RegExp(`aria-describedby="[^"]*${presetErrorId}`));
+
+    // Without errors the controls point at their hints only.
+    const clean = render(createElement(AnnouncementSettingsCard, { everyNTracks: 4, volume: 1, action: async () => failure }));
+    expect(clean).not.toContain('aria-invalid="true"');
+  });
+
+  // NAV-01: the studio's wording and its settings card report unsaved work to the admin-wide guard.
+  it("registers the editor and the settings card with the unsaved-changes guard", () => {
+    guard.register.mockClear();
+    render(createElement(AnnouncementsPreview, { tts: "on", scenario: "default" }));
+    expect(guard.register).toHaveBeenCalledWith(false, { message: "Your announcement text hasn’t been saved." });
+    expect(guard.register).toHaveBeenCalledWith(false, { message: "Your announcement settings haven’t been saved." });
   });
 
   it("loading skeleton announces itself", () => {

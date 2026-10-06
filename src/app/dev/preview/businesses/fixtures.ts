@@ -3,6 +3,8 @@
  * venues of the design (EmeraldBar, Hotel Aurora, Café Central, Restaurant Olive). Client-safe
  * (plain objects only): nothing here touches Supabase.
  */
+import type { StatusProblems } from "@/components/admin/businesses/access-request-cards";
+import { ACCESS_REQUEST_CONFLICT_MESSAGE } from "@/components/admin/businesses/access-request-rules";
 import { deriveBusinessStatus } from "@/components/admin/businesses/business-status";
 import type { AccessRequestCounts, AccessRequestItem } from "@/lib/data/admin/access-requests";
 import type {
@@ -16,6 +18,13 @@ import type {
 } from "@/lib/data/admin/businesses";
 
 export const PREVIEW_BASE_PATH = "/dev/preview/businesses";
+
+/** `?list=` of the preview: the list's state (fixtures, none, a load error, no secret key). */
+export type PreviewListState = "default" | "empty" | "error" | "nokey";
+
+export function parseListState(value: string | null | undefined): PreviewListState {
+  return value === "empty" || value === "error" || value === "nokey" ? value : "default";
+}
 
 export const EMERALDBAR_ID = "0f6b1c8e-2a41-4f6d-9c1e-6b0f8a3d2e11";
 export const HOTEL_AURORA_ID = "1a7c2d9f-3b52-4a7e-8d2f-7c1a9b4e3f22";
@@ -303,3 +312,19 @@ export function fixtureRequestCounts(): AccessRequestCounts {
 }
 
 export const FIXTURE_REQUEST_ID = REQUEST_IDS.lipa;
+
+/** A request that is not in FIXTURE_REQUESTS (its failed change moved it out of the list). */
+export const FIXTURE_ORPHANED_REQUEST_ID = "7a3c8d5f-9b18-4ad4-8d8f-3c7a5b0e9f88";
+
+/**
+ * Failed status changes for the preview’s conflict view (/requests?conflict=1): Bar Kej could not be
+ * reopened (another open request from that email), and a request someone else changed meanwhile
+ * has left the list.
+ */
+export const FIXTURE_REQUEST_PROBLEMS: StatusProblems = {
+  [REQUEST_IDS.kej]: { businessName: "Bar Kej", message: ACCESS_REQUEST_CONFLICT_MESSAGE },
+  [FIXTURE_ORPHANED_REQUEST_ID]: {
+    businessName: "Pekara Zora",
+    message: "Someone changed this request in the meantime. The list has been refreshed; check it and try again.",
+  },
+};
