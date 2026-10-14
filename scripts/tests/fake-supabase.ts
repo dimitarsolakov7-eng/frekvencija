@@ -1,6 +1,7 @@
-// In-memory stand-in for the parts of supabase-js the seed uses (PostgREST builder subset, Storage
-// upload/remove, auth.admin.createUser/listUsers), with the schema's keys and the checks that matter
-// for seeding. `missingSchema` simulates a database without the latest migration. Test-only.
+// In-memory stand-in for the parts of supabase-js the seed and demo removal use (PostgREST builder
+// subset, Storage upload/list/remove, auth.admin.createUser/listUsers/deleteUser), with the schema's
+// keys, cascades and the checks that matter for seeding. `missingSchema` simulates a database without
+// the latest migration. Test-only.
 import { randomUUID } from "node:crypto";
 import type { AdminClient } from "../lib/supabase-admin";
 
@@ -24,6 +25,21 @@ const KEYS: Record<string, string[][]> = {
   platform_settings: [["id"]],
 };
 
+/** `on delete cascade` of the migrations: deleting a row of the key table deletes the matching rows. */
+const CASCADES: Record<string, { table: string; column: string; via: string }[]> = {
+  businesses: [
+    { table: "announcements", column: "business_id", via: "id" },
+    { table: "business_members", column: "business_id", via: "id" },
+    { table: "business_genre_access", column: "business_id", via: "id" },
+  ],
+  genres: [
+    { table: "track_genres", column: "genre_id", via: "id" },
+    { table: "business_genre_access", column: "genre_id", via: "id" },
+  ],
+  tracks: [{ table: "track_genres", column: "track_id", via: "id" }],
+  profiles: [{ table: "business_members", column: "user_id", via: "id" }],
+};
+
 /** Column defaults of the migrations (only the columns the seed reads back). */
 const DEFAULTS: Record<string, () => Row> = {
   profiles: () => ({ full_name: null, role: "business_user" }),
@@ -36,8 +52,8 @@ const DEFAULTS: Record<string, () => Row> = {
     announcement_every_n_tracks: 4,
     announcement_volume: 1,
   }),
-  genres: () => ({ id: randomUUID(), is_enabled: true, available_to_all: true, sort_order: 0 }),
-  tracks: () => ({ id: randomUUID(), is_active: true, removed_at: null }),
+  genres: () => ({ id: randomUUID(), is_enabled: true, available_to_all: true, sort_order: 0, cover_path: null }),
+  tracks: () => ({ id: randomUUID(), is_active: true, removed_at: null, artist: "" }),
   announcements: () => ({ id: randomUUID(), status: "draft", needs_review: false, branding_version: 1, audio_path: null, approved_at: null }),
   business_members: () => ({}),
   business_genre_access: () => ({}),
@@ -53,9 +69,11 @@ const DEFAULTS: Record<string, () => Row> = {
   }),
 };
 
+type Op = "select" | "insert" | "upsert" | "update" | "delete";
+
 export interface FakeFailure {
   table: string;
-  op: "insert" | "update" | "upsert" | "select";
+  op: Op;
   message?: string;
 }
 
@@ -105,6 +123,19 @@ export class FakeSupabase {
     return rows;
   }
 
+  /** Deletes `doomed` from `table` and, like the migrations' `on delete cascade`, the rows that reference them. */
+  private cascadeDelete(table: string, doomed: Row[]): void {
+    const rows = this.rows(table);
+    for (const row of doomed) rows.splice(rows.indexOf(row), 1);
+    for (const cascade of CASCADES[table] ?? []) {
+      const parents = new Set(doomed.map((row) => row[cascade.via]));
+      this.cascadeDelete(
+        cascade.table,
+        this.rows(cascade.table).filter((child) => parents.has(child[cascade.column])),
+      );
+    }
+  }
+
   private violation(table: string, row: Row, ignore?: Row): string | null {
     for (const key of KEYS[table]) {
       const clash = this.rows(table).find((other) => other !== ignore && key.every((column) => other[column] === row[column]));
@@ -119,7 +150,7 @@ export class FakeSupabase {
   }
 
   /** The error PostgREST returns for a table or column that does not exist, or null. */
-  private schemaError(table: string, op: "select" | "insert" | "upsert" | "update", state: BuilderState): Result["error"] {
+  private schemaError(table: string, op: Op, state: BuilderState): Result["error"] {
     if (this.missingSchema.has(table)) return { message: `Could not find the table 'public.${table}' in the schema cache`, code: "PGRST205" };
     const written = op === "select" ? [] : state.payload.flatMap((row) => Object.keys(row));
     const missingWritten = written.find((column) => this.missingSchema.has(`${table}.${column}`));
@@ -129,7 +160,7 @@ export class FakeSupabase {
     return null;
   }
 
-  execute(table: string, op: "select" | "insert" | "upsert" | "update", state: BuilderState): Result {
+  execute(table: string, op: Op, state: BuilderState): Result {
     if (this.failure && this.failure.table === table && this.failure.op === op) {
       return { data: null, error: { message: this.failure.message ?? `injected ${op} failure on ${table}`, code: "XX000" } };
     }
@@ -140,6 +171,12 @@ export class FakeSupabase {
     let affected: Row[] = [];
     if (op === "select") {
       affected = rows.filter(matches);
+    } else if (op === "delete") {
+      affected = rows.filter(matches).map((row) => ({ ...row }));
+      this.cascadeDelete(
+        table,
+        rows.filter(matches),
+      );
     } else if (op === "update") {
       for (const row of rows.filter(matches)) {
         const next = { ...row, ...state.payload[0] };
@@ -190,6 +227,19 @@ export class FakeSupabase {
           for (const path of paths) this.objects.delete(`${bucket}/${path}`);
           return { data: paths.map((name) => ({ name })), error: null };
         },
+        // One level, like Storage: files get an id, sub-folders come back with id null.
+        list: async (prefix = "", options: { limit?: number; offset?: number } = {}) => {
+          const folder = prefix ? `${bucket}/${prefix}/` : `${bucket}/`;
+          const entries = new Map<string, { name: string; id: string | null }>();
+          for (const key of this.objects.keys()) {
+            if (!key.startsWith(folder)) continue;
+            const [name, ...rest] = key.slice(folder.length).split("/");
+            if (!entries.has(name)) entries.set(name, { name, id: rest.length > 0 ? null : `object-${name}` });
+          }
+          const sorted = [...entries.values()].sort((a, b) => a.name.localeCompare(b.name));
+          const offset = options.offset ?? 0;
+          return { data: sorted.slice(offset, offset + (options.limit ?? 100)), error: null };
+        },
       }),
     };
     const auth = {
@@ -205,6 +255,17 @@ export class FakeSupabase {
           data: { users: this.authUsers.slice((page - 1) * perPage, page * perPage).map(({ id, email }) => ({ id, email })) },
           error: null,
         }),
+        // Removes the auth user; the profile (and what references it) goes with it, like `on delete cascade`.
+        deleteUser: async (id: string) => {
+          const index = this.authUsers.findIndex((candidate) => candidate.id === id);
+          if (index === -1) return { data: { user: null }, error: { message: "User not found", code: "user_not_found", status: 404 } };
+          const [user] = this.authUsers.splice(index, 1);
+          this.cascadeDelete(
+            "profiles",
+            this.rows("profiles").filter((profile) => profile.id === id),
+          );
+          return { data: { user: { id: user.id, email: user.email } }, error: null };
+        },
         getUserById: async (id: string) => {
           const user = this.authUsers.find((candidate) => candidate.id === id);
           return user
@@ -243,7 +304,7 @@ interface BuilderState {
 }
 
 class Builder implements PromiseLike<Result> {
-  private op: "select" | "insert" | "upsert" | "update" = "select";
+  private op: Op = "select";
   private readonly state: BuilderState = {
     filters: [],
     columns: [],
@@ -281,6 +342,10 @@ class Builder implements PromiseLike<Result> {
   update(values: Row): this {
     this.op = "update";
     this.state.payload = [values];
+    return this;
+  }
+  delete(): this {
+    this.op = "delete";
     return this;
   }
   eq(column: string, value: unknown): this {

@@ -112,6 +112,7 @@ Optional demo data (two example venues, EmeraldBar and Hotel Aurora, with synthe
 npm run demo:audio               # regenerate the synthetic demo audio in supabase/seed/audio/
 npm run seed:dev -- --dry-run    # show the plan
 npm run seed:dev -- --yes        # write it (add --allow-remote for a hosted development project)
+npm run demo:remove -- --yes     # delete it again before launch (-- --dry-run shows the plan first)
 ```
 
 Without `.env.local`, `npm run dev` still renders the public pages. The app pages redirect to
@@ -131,6 +132,7 @@ Without `.env.local`, `npm run dev` still renders the public pages. The app page
 | `npm run check` | `typecheck`, `lint`, `test` and `build` in sequence |
 | `npm run demo:audio` | Generate the synthetic demo loops and demo announcements (`-- --no-sapi` uses chimes instead of Windows speech) |
 | `npm run seed:dev` | Development seed: `-- --dry-run`, or `-- --yes [--allow-remote] [--admin-email <email>]` |
+| `npm run demo:remove` | Delete the demo data again before launch: `-- --dry-run`, or `-- --yes [--genres]` (see [docs/SEEDING.md](docs/SEEDING.md)) |
 | `npm run admin:create` | `-- <email> [--link]`: invite or promote a platform administrator (never sets or prints passwords) |
 | `npm run brand:assets` | Regenerate `public/brand/*`, the app icons and the social image from `design/assets` |
 

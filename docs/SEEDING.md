@@ -1,6 +1,6 @@
 # Demo audio, development seed and first admin
 
-Three local scripts prepare a development project. All of them run with `tsx` from `scripts/`
+Four local scripts prepare a development project, or clean it up. All of them run with `tsx` from `scripts/`
 (`scripts/package.json` puts them in ESM mode) and read `.env.local`, then `.env`, from the project
 root. Variables already set in the shell win. They need a supported Node.js version
 ([SETUP.md §1](SETUP.md#1-requirements)). An older Node.js stops with a clear message instead of
@@ -11,6 +11,7 @@ root. Variables already set in the shell win. They need a supported Node.js vers
 | `npm run demo:audio` | Generates the synthetic demo audio into `supabase/seed/audio/` | none |
 | `npm run seed:dev -- --dry-run` | Prints what the seed would do | none |
 | `npm run seed:dev -- --yes` | Writes demo genres, venues, users, tracks and announcements | Supabase (secret key) |
+| `npm run demo:remove -- --yes` | Deletes the demo venues, users and tracks again, with their files (`--dry-run` only prints the plan) | Supabase (secret key) |
 | `npm run admin:create -- <email> [--link]` | Invites or promotes a platform admin | Supabase (secret key) |
 
 > **All demo audio is synthetic and labelled as such.** The music files are generated tone loops,
@@ -207,10 +208,33 @@ is removed again. A failed run can therefore simply be re-run, and it continues 
 
 ### Removing demo data
 
-Delete the demo venues, tracks and genres in the admin UI, and the demo users in the Supabase
-dashboard (Authentication). Deleting rows does **not** delete Storage objects. Remove them in the
-dashboard (buckets `music` → `tracks/…`, and `announcements` → `<business_id>/…`) or with the
-Storage API. SQL cannot delete Storage objects.
+```bash
+npm run demo:remove -- --dry-run           # reads the project and prints the plan; deletes nothing
+npm run demo:remove -- --yes               # deletes the demo venues, users and tracks, with their files
+npm run demo:remove -- --yes --genres      # also deletes the demo genres (and their covers)
+```
+
+The removal is the seed's counterpart and uses the same markers, so it only ever deletes:
+
+| Kind | Deleted when | Also removed |
+| --- | --- | --- |
+| Businesses | Named EmeraldBar or Hotel Aurora **and** the `demo+…@example.com` contact email | Their announcements (rows and files), logo, genre access, staff memberships and playback preferences |
+| Users | Staff of a demo venue with an `@example.com` address or the `SEED_*` address the seed was given; never a platform admin, never a member of a real venue | The auth user and its profile |
+| Demo admin | The `SEED_ADMIN_EMAIL` (default `admin@example.com`) account, only when it is under `example.com` **and** another platform admin exists | — |
+| Tracks | Artist `Frekvencija Test Signal` **and** a "Test Loop NN — Genre (synthetic)" title | The `music` object at `storage_path` plus anything else in `tracks/{id}/` |
+| Genres | Only with `--genres`, and only when no other track uses the genre | The cover in `genre-covers` |
+
+Without `--genres`, the demo genres stay (empty, ready for real music). Jazz and Balkan Hits, which
+the seed offered only to demo venues, are set back to **All businesses** unless a real venue was
+given access to them. Anything that looks similar but has no marker (a real venue that shares a demo
+name, a real staff member of a demo venue, a track by another artist) is kept and listed under
+**Notes**. Platform settings are never touched.
+
+Objects are removed before the row that points at them, so an interrupted run leaves no row pointing
+at a file that was deleted behind its back, and re-running continues where it stopped. Unlike the
+seed, `--dry-run` reads the project (the plan comes entirely from the existing rows) but writes
+nothing; the removal has no `NODE_ENV` or `--allow-remote` guard, because cleaning a production
+project before launch is exactly what it is for.
 
 ## 3. Create the first platform admin
 

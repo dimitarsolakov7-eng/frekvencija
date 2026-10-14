@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "demo:audio": "tsx scripts/generate-demo-audio.ts",
     "seed:dev": "tsx scripts/seed-dev.ts",
+    "demo:remove": "tsx scripts/remove-demo.ts",
     "admin:create": "tsx scripts/create-admin.ts",
     "check": "npm run typecheck && npm run lint && npm test && npm run build",
     "brand:assets": "tsx scripts/generate-brand-assets.ts",
