@@ -18,13 +18,13 @@ export function Faq({ copy }: FaqProps) {
   return (
     <section id={SECTION_IDS.faq} aria-labelledby="faq-title" className="relative border-t border-border py-24 sm:py-32 lg:py-36">
       <Container className="grid gap-12 lg:grid-cols-12 lg:gap-10">
-        <div className="grid content-start gap-8 lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
+        <div className="grid content-start gap-8 lg:sticky lg:top-28 lg:col-span-5 lg:self-start">
           <SectionLabel index="08">{copy.label}</SectionLabel>
           <SplitHeading id="faq-title" className="display-xl text-fg">
             {copy.title}
           </SplitHeading>
         </div>
-        <Reveal items="[data-faq]" stagger={0.06} className="border-t border-border lg:col-span-8">
+        <Reveal items="[data-faq]" stagger={0.06} className="border-t border-border lg:col-span-7">
           {copy.items.map((item, index) => (
             <details key={item.question} name="faq" data-faq="" data-anim="" open={index === 0 || undefined} className="faq-item group border-b border-border">
               <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-6 py-6 text-left [&::-webkit-details-marker]:hidden">
