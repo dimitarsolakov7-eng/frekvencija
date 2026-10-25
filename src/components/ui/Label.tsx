@@ -9,9 +9,11 @@ export interface LabelProps extends ComponentPropsWithRef<"label"> {
   required?: boolean;
   /** Shows a muted "(optional)" suffix instead. */
   optional?: boolean;
+  /** Word inside the optional suffix, for localised forms (default "optional"). */
+  optionalLabel?: string;
 }
 
-export function Label({ required = false, optional = false, className, children, ...props }: LabelProps) {
+export function Label({ required = false, optional = false, optionalLabel = "optional", className, children, ...props }: LabelProps) {
   return (
     <label {...props} className={cn("text-sm font-medium text-fg", className)}>
       {children}
@@ -20,7 +22,7 @@ export function Label({ required = false, optional = false, className, children,
           *
         </span>
       )}
-      {optional && !required && <span className="ml-1.5 font-normal text-fg-subtle">(optional)</span>}
+      {optional && !required && <span className="ml-1.5 font-normal text-fg-subtle">({optionalLabel})</span>}
     </label>
   );
 }

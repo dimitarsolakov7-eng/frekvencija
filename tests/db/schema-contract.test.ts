@@ -178,6 +178,8 @@ const columnContract: { [T in keyof TableDefs]: TableContract<TableDefs[T]> } = 
     email: "string",
     phone: "string | null?",
     message: "string | null?",
+    city: "string | null?",
+    preferred_genre: "string | null?",
     status: "enum:access_request_status?",
     admin_notes: "string | null?",
     handled_by: "string | null?",

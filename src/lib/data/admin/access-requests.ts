@@ -34,6 +34,10 @@ export interface AccessRequestItem {
   email: string;
   phone: string | null;
   message: string | null;
+  /** The venue's city (trial form); null for older requests. */
+  city: string | null;
+  /** Catalogue genre name the venue asked for, `GENRE_RECOMMENDATION` for "suggest one", or null. */
+  preferredGenre: string | null;
   status: AccessRequestStatus;
   adminNotes: string | null;
   /** Who last changed the status or notes (email), when known. */
@@ -54,6 +58,8 @@ export function toAccessRequestItem(row: AccessRequestRow): AccessRequestItem {
     email: row.email,
     phone: row.phone,
     message: row.message,
+    city: row.city ?? null,
+    preferredGenre: row.preferred_genre ?? null,
     status: row.status,
     adminNotes: row.admin_notes,
     handledByEmail: row.handler?.email ?? null,

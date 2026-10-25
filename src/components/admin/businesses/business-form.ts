@@ -3,6 +3,7 @@
  * (server). No React, no server-only imports.
  */
 import type { BusinessType } from "@/lib/api/contracts";
+import { suggestStationName } from "@/lib/brand/station-name";
 
 /** Text fields of the business profile form, in display order. */
 export const BUSINESS_TEXT_FIELDS = [
@@ -47,18 +48,8 @@ export const BUSINESS_FIELD_MAX_LENGTH: Record<BusinessTextField, number> = {
   announcementLanguage: 16,
 };
 
-const STATION_SUFFIX = "Radio";
-
-/**
- * Suggested station name for a venue: "EmeraldBar" → "EmeraldBar Radio". A name that already ends
- * in "Radio" is kept as is. Returns "" when there is no name or the suggestion would be too long.
- */
-export function suggestStationName(name: string): string {
-  const trimmed = name.replace(/\s+/g, " ").trim();
-  if (!trimmed) return "";
-  const suggestion = new RegExp(`(^|\\s)${STATION_SUFFIX}$`, "i").test(trimmed) ? trimmed : `${trimmed} ${STATION_SUFFIX}`;
-  return suggestion.length <= BUSINESS_FIELD_MAX_LENGTH.stationName ? suggestion : "";
-}
+/** "<venue> Radio" suggestion; shared with the public website's preview (src/lib/brand/station-name.ts). */
+export { suggestStationName };
 
 /** The last submitted string for `key` ("" when absent), so "hidden false + checkbox true" reads as "true". */
 export function lastFormString(formData: FormData, key: string): string {

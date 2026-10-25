@@ -1,7 +1,7 @@
 import "server-only";
 import type { VenueAccountDetails } from "@/components/player/AccountView";
-import { BUSINESS_TYPE_OPTIONS } from "@/components/public/request-access-options";
 import type { BusinessType } from "@/lib/api/contracts";
+import { BUSINESS_TYPE_OPTIONS } from "@/lib/public/business-types";
 import type { SessionBusiness } from "@/lib/auth/access";
 import { languageDisplayName } from "@/lib/tts/models";
 import type { TypedSupabaseClient } from "@/lib/supabase/types";

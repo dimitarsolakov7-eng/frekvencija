@@ -494,6 +494,10 @@ export type Database = {
           email: string;
           phone: string | null;
           message: string | null;
+          /** The venue's city (public trial form); null for requests sent before it existed. */
+          city: string | null;
+          /** Catalogue genre name the venue asked for, or 'recommendation'; null when not given. */
+          preferred_genre: string | null;
           status: Database["public"]["Enums"]["access_request_status"];
           admin_notes: string | null;
           handled_by: string | null;
@@ -509,6 +513,8 @@ export type Database = {
           email: string;
           phone?: string | null;
           message?: string | null;
+          city?: string | null;
+          preferred_genre?: string | null;
           status?: Database["public"]["Enums"]["access_request_status"];
           admin_notes?: string | null;
           handled_by?: string | null;
@@ -524,6 +530,8 @@ export type Database = {
           email?: string;
           phone?: string | null;
           message?: string | null;
+          city?: string | null;
+          preferred_genre?: string | null;
           status?: Database["public"]["Enums"]["access_request_status"];
           admin_notes?: string | null;
           handled_by?: string | null;

@@ -133,3 +133,10 @@ describe("isStaticAssetPath", () => {
     expect(isStaticAssetPath("/radio")).toBe(false);
   });
 });
+
+describe("language switch (/lang)", () => {
+  it("stays reachable in setup mode and for everyone once configured", () => {
+    expect(decideProxyAction({ pathname: "/lang/en", ...setupMode })).toEqual({ type: "next" });
+    expect(decideProxyAction({ pathname: "/lang/mk", search: "?next=%2F", ...signedOut })).toEqual({ type: "next" });
+  });
+});

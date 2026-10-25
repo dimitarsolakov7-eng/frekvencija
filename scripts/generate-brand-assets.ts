@@ -4,14 +4,16 @@
  *   npm run brand:assets
  *
  * Outputs (committed, deterministic):
- *   public/brand/frekvencija-logo-ivory.png    transparent logo, green emblem + ivory wordmark (dark UI)
- *   public/brand/frekvencija-logo-dark.png     transparent logo, green emblem + dark wordmark (light UI / email)
+ *   public/brand/frekvencija-logo-ivory.png    transparent logo, green emblem + ivory wordmark (dark app UI)
+ *   public/brand/frekvencija-logo-dark.png     transparent logo, green emblem + dark wordmark (email)
+ *   public/brand/frekvencija-logo-cobalt.png   transparent logo, cobalt emblem + charcoal wordmark (public website)
  *   public/brand/frekvencija-emblem.png        the green f/equaliser emblem only, transparent
+ *   public/brand/frekvencija-emblem-cobalt.png the same emblem in the website's cobalt
  *   public/brand/venue-hero.jpg                the supplied venue photograph, web-optimised
  *   public/brand/genres/default-01..08.jpg     neutral genre artwork: cropped, tinted variations of the
  *                                             venue photograph (placeholder until the owner uploads covers)
- *   src/app/icon.png, src/app/apple-icon.png   app icons (emblem on the page colour)
- *   src/app/opengraph-image.png                social preview (photo + logo)
+ *   src/app/icon.png, src/app/apple-icon.png   app icons (cobalt emblem on the website's ivory)
+ *   src/app/opengraph-image.png                social preview (ivory, cobalt logo, photo on the right)
  *
  * sharp ships with Next.js as an optional dependency, so no extra install is needed.
  */
@@ -25,8 +27,14 @@ const SRC = join(ROOT, "design", "assets");
 const OUT = join(ROOT, "public", "brand");
 const APP = join(ROOT, "src", "app");
 
-const PAGE = { r: 11, g: 17, b: 16 }; // #0B1110
-const IVORY = { r: 244, g: 245, b: 238 }; // #F4F5EE
+type Rgb = { r: number; g: number; b: number };
+
+const IVORY_TEXT: Rgb = { r: 244, g: 245, b: 238 }; // #F4F5EE — wordmark on the dark app UI
+const DARK_TEXT: Rgb = { r: 23, g: 29, b: 35 }; // wordmark for light backgrounds (email)
+/** Public website palette (src/app/globals.css, .theme-public). */
+const COBALT: Rgb = { r: 45, g: 75, b: 255 }; // #2D4BFF
+const CHARCOAL: Rgb = { r: 25, g: 27, b: 34 }; // #191B22
+const IVORY_PAGE: Rgb = { r: 245, g: 242, b: 236 }; // #F5F2EC
 
 function isEmblemGreen(r: number, g: number, b: number): boolean {
   return g > r + 40 && g > b + 10;
@@ -36,18 +44,21 @@ async function loadApprovedLogo() {
   return sharp(join(SRC, "frekvencija-logo-approved.png")).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 }
 
-/** Recolour the dark wordmark to `color`, keeping the green emblem and the alpha channel. */
-async function recolouredLogo(color: { r: number; g: number; b: number }, outFile: string, width: number) {
+/**
+ * Recolour the wordmark to `wordmark` and, when given, the green emblem to `emblem`, keeping the alpha
+ * channel (which carries the anti-aliasing).
+ */
+async function recolouredLogo(wordmark: Rgb, outFile: string, width: number, emblem: Rgb | null = null) {
   const { data, info } = await loadApprovedLogo();
   const out = Buffer.from(data);
   for (let i = 0; i < out.length; i += 4) {
     const a = out[i + 3];
     if (a === 0) continue;
-    if (!isEmblemGreen(out[i], out[i + 1], out[i + 2])) {
-      out[i] = color.r;
-      out[i + 1] = color.g;
-      out[i + 2] = color.b;
-    }
+    const color = isEmblemGreen(out[i], out[i + 1], out[i + 2]) ? emblem : wordmark;
+    if (!color) continue;
+    out[i] = color.r;
+    out[i + 1] = color.g;
+    out[i + 2] = color.b;
   }
   const trimmed = await sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
     .trim({ threshold: 1 })
@@ -56,17 +67,28 @@ async function recolouredLogo(color: { r: number; g: number; b: number }, outFil
   await sharp(trimmed).resize({ width }).png({ compressionLevel: 9 }).toFile(outFile);
 }
 
-async function emblem(outFile: string, size: number) {
+/** The emblem alone, cropped from the approved logo; `color` recolours its green. Returns the cropped PNG. */
+async function emblem(outFile: string, size: number, color: Rgb | null = null) {
   const { data, info } = await loadApprovedLogo();
+  const pixels = Buffer.from(data);
   let minX = info.width, minY = info.height, maxX = 0, maxY = 0;
   for (let y = 0; y < info.height; y++) {
     for (let x = 0; x < info.width; x++) {
       const i = (y * info.width + x) * 4;
-      if (data[i + 3] > 24 && isEmblemGreen(data[i], data[i + 1], data[i + 2])) {
+      if (pixels[i + 3] > 24 && isEmblemGreen(pixels[i], pixels[i + 1], pixels[i + 2])) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
         if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (color) {
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i + 3] > 0 && isEmblemGreen(pixels[i], pixels[i + 1], pixels[i + 2])) {
+        pixels[i] = color.r;
+        pixels[i + 1] = color.g;
+        pixels[i + 2] = color.b;
       }
     }
   }
@@ -75,7 +97,7 @@ async function emblem(outFile: string, size: number) {
   const top = Math.max(0, minY - pad);
   const width = Math.min(info.width - left, maxX - minX + 1 + pad * 2);
   const height = Math.min(info.height - top, maxY - minY + 1 + pad * 2);
-  const cropped = await sharp(data, { raw: { width: info.width, height: info.height, channels: 4 } })
+  const cropped = await sharp(pixels, { raw: { width: info.width, height: info.height, channels: 4 } })
     .extract({ left, top, width, height })
     .png()
     .toBuffer();
@@ -86,13 +108,13 @@ async function emblem(outFile: string, size: number) {
   return cropped;
 }
 
-async function appIcon(emblemPng: Buffer, outFile: string, size: number) {
+async function appIcon(emblemPng: Buffer, outFile: string, size: number, background: Rgb) {
   const inner = Math.round(size * 0.66);
   const glyph = await sharp(emblemPng)
     .resize({ width: inner, height: inner, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png()
     .toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 4, background: { ...PAGE, alpha: 1 } } })
+  await sharp({ create: { width: size, height: size, channels: 4, background: { ...background, alpha: 1 } } })
     .composite([{ input: glyph, gravity: "center" }])
     .png({ compressionLevel: 9 })
     .toFile(outFile);
@@ -135,16 +157,29 @@ async function genreArtwork(heroPath: string) {
   return n;
 }
 
-async function openGraph(heroPath: string, logoIvory: string) {
-  const logo = await sharp(logoIvory).resize({ width: 520 }).png().toBuffer();
-  const shade = Buffer.from(
-    `<svg width="1200" height="630"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#0B1110" stop-opacity="0.92"/><stop offset="0.65" stop-color="#0B1110" stop-opacity="0.45"/><stop offset="1" stop-color="#0B1110" stop-opacity="0.1"/></linearGradient></defs><rect width="1200" height="630" fill="url(#g)"/></svg>`,
+/** Social preview in the website's look: ivory field, cobalt logo, the venue photograph fading in on the right. */
+async function openGraph(heroPath: string, logoCobalt: string) {
+  const W = 1200;
+  const H = 630;
+  const photoWidth = 560;
+  const logo = await sharp(logoCobalt).resize({ width: 470 }).png().toBuffer();
+  const photo = await sharp(heroPath)
+    .resize({ width: photoWidth, height: H, fit: "cover", position: "attention" })
+    .png()
+    .toBuffer();
+  const ivory = `rgb(${IVORY_PAGE.r},${IVORY_PAGE.g},${IVORY_PAGE.b})`;
+  const fade = Buffer.from(
+    `<svg width="${photoWidth}" height="${H}"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${ivory}" stop-opacity="1"/><stop offset="0.28" stop-color="${ivory}" stop-opacity="0"/></linearGradient></defs><rect width="${photoWidth}" height="${H}" fill="url(#g)"/></svg>`,
   );
-  await sharp(heroPath)
-    .resize({ width: 1200, height: 630, fit: "cover" })
+  const line = Buffer.from(
+    `<svg width="${W}" height="${H}"><path d="M72 452 C 140 452, 170 400, 230 400 S 320 470, 380 470 S 470 392, 530 392 S 600 440, 640 440" fill="none" stroke="rgb(${COBALT.r},${COBALT.g},${COBALT.b})" stroke-width="3" stroke-linecap="round" opacity="0.9"/></svg>`,
+  );
+  await sharp({ create: { width: W, height: H, channels: 4, background: { ...IVORY_PAGE, alpha: 1 } } })
     .composite([
-      { input: shade, left: 0, top: 0 },
-      { input: logo, left: 72, top: 250 },
+      { input: photo, left: W - photoWidth, top: 0 },
+      { input: fade, left: W - photoWidth, top: 0 },
+      { input: line, left: 0, top: 0 },
+      { input: logo, left: 72, top: 236 },
     ])
     .png({ compressionLevel: 9 })
     .toFile(join(APP, "opengraph-image.png"));
@@ -153,16 +188,19 @@ async function openGraph(heroPath: string, logoIvory: string) {
 async function main() {
   await mkdir(OUT, { recursive: true });
   const logoIvory = join(OUT, "frekvencija-logo-ivory.png");
-  await recolouredLogo(IVORY, logoIvory, 1200);
-  await recolouredLogo({ r: 23, g: 29, b: 35 }, join(OUT, "frekvencija-logo-dark.png"), 1200);
-  const emblemPng = await emblem(join(OUT, "frekvencija-emblem.png"), 512);
-  await appIcon(emblemPng, join(APP, "icon.png"), 512);
-  await appIcon(emblemPng, join(APP, "apple-icon.png"), 180);
+  const logoCobalt = join(OUT, "frekvencija-logo-cobalt.png");
+  await recolouredLogo(IVORY_TEXT, logoIvory, 1200);
+  await recolouredLogo(DARK_TEXT, join(OUT, "frekvencija-logo-dark.png"), 1200);
+  await recolouredLogo(CHARCOAL, logoCobalt, 1200, COBALT);
+  await emblem(join(OUT, "frekvencija-emblem.png"), 512);
+  const cobaltEmblem = await emblem(join(OUT, "frekvencija-emblem-cobalt.png"), 512, COBALT);
+  await appIcon(cobaltEmblem, join(APP, "icon.png"), 512, IVORY_PAGE);
+  await appIcon(cobaltEmblem, join(APP, "apple-icon.png"), 180, IVORY_PAGE);
 
   const heroPath = join(SRC, "venue-hero.png");
   await sharp(heroPath).jpeg({ quality: 82, mozjpeg: true }).toFile(join(OUT, "venue-hero.jpg"));
   const variants = await genreArtwork(heroPath);
-  await openGraph(heroPath, logoIvory);
+  await openGraph(heroPath, logoCobalt);
 
   console.log(`Brand assets written to public/brand (${variants} genre artworks) and src/app icons.`);
 }

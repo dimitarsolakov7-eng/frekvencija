@@ -46,6 +46,8 @@ const ROW = {
   email: "ana@bistrolipa.example",
   phone: null,
   message: "Two locations.",
+  city: "Skopje",
+  preferred_genre: "Jazz",
   status: "new",
   admin_notes: null,
   handled_by: null,
@@ -139,6 +141,8 @@ describe("access request data", () => {
     expect(toAccessRequestItem({ ...ROW, business_type: "pub", handler: { email: "admin@x.example" } } as never)).toMatchObject({
       businessName: "Bistro Lipa",
       businessType: "other",
+      city: "Skopje",
+      preferredGenre: "Jazz",
       status: "new",
       handledByEmail: "admin@x.example",
       createdAt: "2026-09-24T19:12:00Z",

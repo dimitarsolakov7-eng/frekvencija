@@ -22,6 +22,8 @@ export interface FieldProps {
   /** Marks the label and sets `required` on the control (unless the control sets it itself). */
   required?: boolean;
   optional?: boolean;
+  /** Word inside the "(optional)" suffix, for localised forms. */
+  optionalLabel?: string;
   /** Control id; defaults to the control's own id, then a generated one. */
   id?: string;
   /** Keep the label for assistive technology only. */
@@ -55,6 +57,7 @@ export function Field({
   error,
   required = false,
   optional = false,
+  optionalLabel,
   id,
   hideLabel = false,
   labelAside,
@@ -75,6 +78,7 @@ export function Field({
           htmlFor={controlId}
           required={required}
           optional={optional}
+          optionalLabel={optionalLabel}
           className={hideLabel ? "sr-only" : undefined}
         >
           {label}

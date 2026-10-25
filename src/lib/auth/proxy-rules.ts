@@ -59,7 +59,7 @@ export const SETUP_MODE_PUBLIC_PREFIXES = [
  * Always reachable in setup mode: the setup page, static brand assets, and development-only tooling
  * that works without Supabase (those routes 404 in production themselves).
  */
-const SETUP_EXEMPT_PREFIXES = [SETUP_PATH, "/brand", "/dev", "/api/dev"] as const;
+const SETUP_EXEMPT_PREFIXES = [SETUP_PATH, "/brand", "/dev", "/api/dev", "/lang"] as const;
 
 const STATIC_FILE_PATTERN =
   /\.(?:svg|png|jpe?g|gif|webp|avif|ico|mp3|wav|ogg|m4a|aac|flac|css|js|map|txt|xml|webmanifest|woff2?|ttf)$/i;

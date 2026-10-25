@@ -168,8 +168,9 @@ Venue accounts land on their radio (`/radio`).
 
 | Route | Who | What |
 | --- | --- | --- |
-| `/` | everyone | Homepage. Its genre collection shows your enabled genres that are available to all businesses (names, descriptions, covers — never tracks). Until there are any, or without the secret key, it shows an illustrative default list |
-| `/request-access` | everyone | Businesses ask for a station. Requests are stored for you under **Businesses → Access requests**; nothing is approved automatically, and a second open request from the same email is answered with a friendly note |
+| `/` | everyone | Homepage (Macedonian by default, MK / EN switch; see `docs/WEBSITE.md`). Its genre rows show your enabled genres that are available to all businesses (names, descriptions, covers — never tracks). Until there are any, or without the secret key, it shows an illustrative default list. The trial form lives in its `#trial` section |
+| `/request-access` | everyone | The 3-day free trial request on its own page. Requests are stored for you under **Businesses → Access requests** (with the venue's city and preferred genre); nothing is activated or approved automatically, and a second open request from the same email is answered with a friendly note |
+| `/lang/mk`, `/lang/en` | everyone | The language switch: remembers the choice in a cookie and returns to the current page |
 | `/privacy`, `/terms` | everyone | Your privacy policy and terms of service from **Settings**, or an honest "not published yet" note |
 | `/login`, `/forgot-password` | signed out | Log in; request a password-reset link (the answer never reveals whether an account exists) |
 | `/reset-password` | from an invite or reset link, or signed in | Choose a new password (`/set-password` redirects here) |

@@ -343,7 +343,7 @@ access_request_status  = ('new', 'contacted', 'approved', 'declined')
 | `businesses.business_type` | business_type not null default 'other' | existing rows become `'other'`. Covered by the existing businesses grants and policies (members read it, admins write it). It is not part of the branding tracked by `bump_branding_version()`, so a change never flags announcements |
 | `genres.cover_path` | text null | 1–512 chars. Object path in bucket `genre-covers`: `{genre_id}/{random}.{png|jpg|webp}`. Partial index `genres_cover_path_idx`. Visible to whoever can see the genre row |
 
-**access_requests** (submissions from the public `/request-access` form; RLS enabled)
+**access_requests** (submissions from the public trial-request form, `/#trial` and `/request-access`; RLS enabled)
 
 | column | type | notes |
 | --- | --- | --- |
@@ -354,6 +354,8 @@ access_request_status  = ('new', 'contacted', 'approved', 'declined')
 | email | text not null | ≤ 254, same basic format check as `businesses.contact_email` |
 | phone | text null | ≤ 40 |
 | message | text null | ≤ 1000 |
+| city | text null | 1–120 (trimmed); added by `20261026000100_trial_requests.sql` |
+| preferred_genre | text null | 1–80: the catalogue genre's name, or `recommendation` ("I need a recommendation") |
 | status | access_request_status not null default 'new' | |
 | admin_notes | text null | ≤ 2000 |
 | handled_by | uuid null | → profiles on delete set null (`access_requests_handled_by_fkey`) |
@@ -456,9 +458,11 @@ type SessionContext = {
 Final route list (see REDESIGN.md §2 for the per-screen behaviour):
 
 ```
-/                          → public homepage (signed-in users see "Open radio" / "Admin workspace");
-                             root-level email-link callbacks (?token_hash / ?code) are forwarded to /auth/confirm
-/request-access            → public access-request form (stored in access_requests, never auto-approved)
+/                          → public homepage, Macedonian by default with an English version (docs/WEBSITE.md);
+                             signed-in users see "Open radio" / "Admin workspace"; root-level email-link
+                             callbacks (?token_hash / ?code) are forwarded to /auth/confirm
+/request-access            → the 3-day trial request on its own page (stored in access_requests, never auto-approved)
+/lang/[mk|en]              → GET handler: sets the language cookie and redirects back (same-origin paths only)
 /privacy, /terms           → owner-supplied text from platform_settings (honest "not published yet" state)
 /setup                     → shown when Supabase env is missing
 /login, /forgot-password   → (auth) group, split photo/form layout

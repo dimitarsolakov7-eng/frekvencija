@@ -82,6 +82,64 @@
   --animate-drawer-in-right: drawer-in-right 200ms ease-out;
   --animate-drawer-in-left: drawer-in-left 200ms ease-out;
   --animate-drawer-in-bottom: drawer-in-bottom 200ms ease-out;
+  /* Public website motion (src/components/public): entrances and the frequency-line drift. */
+  --animate-rise: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-up: fade-up 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-console-in: console-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-freq-drift: freq-drift 16s ease-in-out infinite alternate;
+  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes console-in {
+    from {
+      opacity: 0;
+      transform: translateY(36px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes freq-drift {
+    from {
+      transform: translateX(-2%);
+    }
+    to {
+      transform: translateX(2%);
+    }
+  }
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
 
   @keyframes menu-in {
     from {
@@ -163,6 +221,8 @@
 @theme inline {
   --font-sans: var(--font-inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  /* Editorial display face of the public website (Playfair Display, loaded by the public layout). */
+  --font-display: var(--font-playfair, "Playfair Display", Georgia, "Times New Roman", serif);
 }
 
 @layer base {
@@ -400,6 +460,181 @@
 
 @utility pr-safe {
   padding-right: env(safe-area-inset-right, 0px);
+}
+
+/*
+ * Public website themes (docs/WEBSITE.md). The marketing site is bright: warm ivory, cobalt blue and
+ * charcoal. Instead of a second component library, the three scopes below re-map the semantic tokens,
+ * so every primitive (buttons, fields, accordion, drawer, alerts) keeps working inside them:
+ *   .theme-public   the ivory page (src/app/(public)/layout.tsx wraps everything in it)
+ *   .theme-charcoal the dark statement section (announcements)
+ *   .theme-cobalt   the trial section (white text on cobalt; its form panel is .theme-public again)
+ * The app itself (venue radio, admin, sign-in) keeps the dark evergreen tokens of the @theme block.
+ * Contrast: fg-muted #61656f is ≥ 4.5:1 on ivory, white and stone; border-input #8a867e ≥ 3:1 on
+ * white and ivory; white on cobalt #2d4bff ≈ 5.9:1; accent-text #8fa3ff on charcoal ≈ 7:1.
+ */
+@layer base {
+  .theme-public {
+    color-scheme: light;
+    --color-canvas: #f5f2ec;
+    --color-sidebar: #ece8e1;
+    --color-surface: #ffffff;
+    --color-surface-2: #ece8e1;
+    --color-surface-3: #e2ded6;
+    --color-control: #ffffff;
+    --color-border: #dfdbd3;
+    --color-border-strong: #c9c4ba;
+    --color-border-input: #8a867e;
+    --color-border-input-hover: #6f6b63;
+    --color-fg: #191b22;
+    --color-fg-muted: #61656f;
+    --color-fg-subtle: #6b6f7b;
+    --color-accent: #2d4bff;
+    --color-accent-hover: #2440e6;
+    --color-accent-active: #1c35c7;
+    --color-accent-fg: #ffffff;
+    --color-accent-text: #2d4bff;
+    --color-success: #0f7b4f;
+    --color-warning: #8a5a00;
+    --color-danger: #b3261e;
+    --color-danger-solid: #d92d20;
+    --color-danger-solid-hover: #b42318;
+    --color-info: #1d4ed8;
+    --color-ring: #2d4bff;
+    --shadow-card: 0 1px 2px rgb(25 27 34 / 0.05), 0 16px 40px -24px rgb(25 27 34 / 0.22);
+    --shadow-overlay: 0 0 0 1px rgb(25 27 34 / 0.06), 0 28px 70px -24px rgb(25 27 34 / 0.3);
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+  }
+
+  .theme-charcoal {
+    color-scheme: dark;
+    --color-canvas: #191b22;
+    --color-sidebar: #1f222b;
+    --color-surface: #22252f;
+    --color-surface-2: #2a2e39;
+    --color-surface-3: #333744;
+    --color-control: #1f222b;
+    --color-border: #343845;
+    --color-border-strong: #454a59;
+    --color-border-input: #8a8f9e;
+    --color-border-input-hover: #a3a8b6;
+    --color-fg: #f5f2ec;
+    --color-fg-muted: #b4b8c3;
+    --color-fg-subtle: #9ca1ae;
+    --color-accent: #3d5bff;
+    --color-accent-hover: #5570ff;
+    --color-accent-active: #2d4bff;
+    --color-accent-fg: #ffffff;
+    --color-accent-text: #8fa3ff;
+    --color-success: #4ade80;
+    --color-warning: #fbbf24;
+    --color-danger: #f87171;
+    --color-info: #93c5fd;
+    --color-ring: #8fa3ff;
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -24px rgb(0 0 0 / 0.7);
+    --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.05), 0 28px 70px -24px rgb(0 0 0 / 0.8);
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+  }
+
+  .theme-cobalt {
+    color-scheme: dark;
+    --color-canvas: #2d4bff;
+    --color-sidebar: #2744ea;
+    --color-surface: #3a57ff;
+    --color-surface-2: #4762ff;
+    --color-surface-3: #5a73ff;
+    --color-control: #2744ea;
+    --color-border: #6b80ff;
+    --color-border-strong: #94a4ff;
+    --color-border-input: #c7d0ff;
+    --color-border-input-hover: #e2e7ff;
+    --color-fg: #ffffff;
+    --color-fg-muted: #dfe4ff;
+    --color-fg-subtle: #c7d0ff;
+    --color-accent: #ffffff;
+    --color-accent-hover: #eef1ff;
+    --color-accent-active: #dfe4ff;
+    --color-accent-fg: #2d4bff;
+    --color-accent-text: #ffffff;
+    --color-ring: #ffffff;
+    --shadow-card: 0 16px 40px -24px rgb(12 20 80 / 0.6);
+    --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.12), 0 28px 70px -24px rgb(12 20 80 / 0.7);
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+  }
+
+  /* The root paints the page colour behind overscroll; the public site is bright. */
+  html:has(.theme-public) {
+    background-color: #f5f2ec;
+    color-scheme: light;
+    scrollbar-color: #c9c4ba #f5f2ec;
+  }
+
+  .theme-public ::selection {
+    background-color: rgb(45 75 255 / 0.2);
+    color: #191b22;
+  }
+}
+
+@layer components {
+  /*
+   * Scroll reveals of the public website (<Reveal>). Content is visible by default; the component only
+   * hides an element after hydration when it is below the fold (and motion is allowed), then animates
+   * it in when it scrolls into view. Nothing depends on JavaScript to become visible.
+   */
+  [data-reveal="pending"] {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+
+  [data-reveal="in"] {
+    animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  /* Playing-only waveform bars of the radio console; `--bar-scale` is set per bar from the analyser. */
+  .console-bar {
+    transform: scaleY(var(--bar-scale, 0.2));
+    transform-origin: center;
+    transition: transform 90ms linear;
+  }
+}
+
+/* Editorial display sizes of the public website (Playfair Display via `font-display`). */
+@utility display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.4rem + 5.6vw, 6.25rem);
+  line-height: 1.02;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+@utility display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(2.125rem, 1.3rem + 3.1vw, 4rem);
+  line-height: 1.06;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility display-md {
+  font-family: var(--font-display);
+  font-size: clamp(1.625rem, 1.2rem + 1.7vw, 2.5rem);
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+@utility display-sm {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 500;
+  text-wrap: balance;
 }
 
 /* Minimal motion for people who ask for it: animations stop, transitions become instant. */

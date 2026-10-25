@@ -271,3 +271,22 @@ describe("businesses.business_type", () => {
     expect(rows).toEqual([{ branding_version: 2, flagged: 1 }]);
   });
 });
+
+describe("access_requests: trial details (20261026000100_trial_requests.sql)", () => {
+  it("stores the venue's city and preferred genre, both optional", async () => {
+    const full = await submit({ city: "Skopje", preferred_genre: "House" });
+    expect(full).toMatchObject({ city: "Skopje", preferred_genre: "House" });
+    const recommendation = await submit({ city: "Ohrid", preferred_genre: "recommendation" });
+    expect(recommendation.preferred_genre).toBe("recommendation");
+    const bare = await submit();
+    expect(bare).toMatchObject({ city: null, preferred_genre: null });
+  });
+
+  it("rejects blank or over-long values like the other columns", async () => {
+    const check = { code: "23514" };
+    await expect(submit({ city: "   " })).rejects.toMatchObject(check);
+    await expect(submit({ city: "x".repeat(121) })).rejects.toMatchObject(check);
+    await expect(submit({ preferred_genre: "" })).rejects.toMatchObject(check);
+    await expect(submit({ preferred_genre: "x".repeat(81) })).rejects.toMatchObject(check);
+  });
+});

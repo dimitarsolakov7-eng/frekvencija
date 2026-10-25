@@ -184,6 +184,24 @@ read, and User: read to show remaining credits). In Vercel, open **Settings → 
 Variables**, add `ELEVENLABS_API_KEY`, then go to **Deployments**, open the **⋯** menu of the
 latest one and choose **Redeploy**. Details are in [SETUP.md §10](SETUP.md#10-optional-elevenlabs-voice-generation).
 
+## Step 8: the new website (when you approve it)
+
+The redesigned public website (bright ivory and cobalt, Macedonian with an English switch, the
+3-day trial request) lives on the branch `website-redesign` until you say it should go live. Nothing
+on frekvencija.online changes before that. When you approve it:
+
+1. On the PC, in `Desktop\Music Radio`, run `npm run db:migrate`. It adds two optional columns
+   (city and preferred genre) to the requests table; nothing else changes and the current site keeps
+   working.
+2. Merge `website-redesign` into `frekvencija-mvp` and push (or ask Claude to do it). Vercel deploys
+   it within minutes.
+3. Open <https://frekvencija.online>: the homepage should be the new one, in Macedonian, with
+   **MK / EN** in the header. Send yourself a test request from the form and check it under
+   **Businesses → Access requests** in the admin.
+4. Later, at your pace (`docs/WEBSITE.md` explains each): add demo audio so the console can play, replace
+   the placeholder photos with photos of real venues, set your contact email under **Settings**, and
+   flip the prices to published once you approve them.
+
 ## Afterwards
 
 - Every change pushed to the `frekvencija-mvp` branch on GitHub goes live automatically. Vercel

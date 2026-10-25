@@ -227,7 +227,7 @@ export async function loadPublicSettings(options: LoadPublicSettingsOptions = {}
 }
 
 // ---------------------------------------------------------------------------
-// Access requests (public "Request access" form)
+// Access requests (public "Request a 3-day free trial" form)
 // ---------------------------------------------------------------------------
 
 /** True when the secret key needed for the public form (insert + rate limits) is configured. */
@@ -253,6 +253,10 @@ export interface AccessRequestInput {
   email: string;
   phone: string | null;
   message: string | null;
+  /** The venue's city (trial form). */
+  city: string | null;
+  /** Catalogue genre name the venue asked for, or "recommendation". */
+  preferredGenre: string | null;
 }
 
 export type AccessRequestInsertResult = { ok: true } | { ok: false; reason: "duplicate" | "failed" };
@@ -274,6 +278,8 @@ export async function insertAccessRequest(
       email: input.email,
       phone: input.phone,
       message: input.message,
+      city: input.city,
+      preferred_genre: input.preferredGenre,
     });
     if (!error) return { ok: true };
     if (error.code === "23505") return { ok: false, reason: "duplicate" };

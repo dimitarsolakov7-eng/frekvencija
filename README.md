@@ -43,9 +43,12 @@ The platform name is defined once in `src/config/platform.ts` (override it with
   Announcements (a venue selector, generate or upload, preview, approve, frequency and voice volume)
   and Settings (platform contact details, default announcement frequency for new venues, privacy
   policy and terms text, and the status of the integrations).
-- **Public site**: the homepage (`/`), a **Request access** form (`/request-access`), `/privacy` and
-  `/terms` (the owner's text from Settings, or an honest "not published yet"), and the sign-in pages
-  (`/login`, `/forgot-password`, `/reset-password`).
+- **Public website** (`docs/WEBSITE.md`): a bright editorial homepage (`/`) in Macedonian with a
+  complete English version (MK / EN switch), the signature radio console, a "how would your radio
+  sound?" preview, venue types, the live genre catalogue, the announcement showcase and a **3-day free
+  trial** request (also at `/request-access`), plus `/privacy` and `/terms` (the owner's text from
+  Settings, or an honest "not published yet"). The sign-in pages (`/login`, `/forgot-password`,
+  `/reset-password`) and the app keep their dark design.
 - **Security**: Supabase Auth with invite-only accounts; Row Level Security on every table; private
   Storage buckets; short-lived signed media URLs, signed with the venue user's own session; server-side
   authorisation that never trusts a business id sent by the client; rate limits on sign-in, password
@@ -56,7 +59,7 @@ The platform name is defined once in `src/config/platform.ts` (override it with
 | Area | Choice |
 | --- | --- |
 | App | Next.js 16.3.6 (App Router, `src/proxy.ts`), React 19.2, TypeScript (strict) |
-| UI | Tailwind CSS 4 (tokens in `src/app/globals.css`), `lucide-react` icons, Inter via `next/font` |
+| UI | Tailwind CSS 4 (tokens in `src/app/globals.css`, with the public website's light scopes), `lucide-react` icons, Inter and Playfair Display (Latin + Cyrillic) via `next/font` |
 | Backend | Server Components, Server Actions and Route Handlers (Node runtime) |
 | Auth, database, files | Supabase Auth, Postgres with RLS, private Storage (`@supabase/ssr`, `@supabase/supabase-js`) |
 | Validation | `zod` 4; MP3 checks with an own frame walk plus `music-metadata` |
@@ -141,7 +144,7 @@ Without `.env.local`, `npm run dev` still renders the public pages. The app page
 ```text
 src/
   app/
-    (public)/          homepage, /request-access, /privacy, /terms
+    (public)/          homepage, /request-access (trial form), /privacy, /terms; lang/ switches MK / EN
     (auth)/            /login, /forgot-password, /reset-password (/set-password redirects there)
     auth/              /auth/confirm (email links, "Continue" button), /auth/signout
     (venue)/           /radio, /account, /help (the layout owns the persistent player)

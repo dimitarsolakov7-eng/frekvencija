@@ -233,6 +233,8 @@ describe("access requests", () => {
     email: "ana@example.com",
     phone: null,
     message: "Evening lounge sound",
+    city: "Skopje",
+    preferredGenre: "House",
   };
 
   it("canStoreAccessRequests needs Supabase and the secret key", () => {
@@ -255,6 +257,8 @@ describe("access requests", () => {
         email: "ana@example.com",
         phone: null,
         message: "Evening lounge sound",
+        city: "Skopje",
+        preferred_genre: "House",
       },
     ]);
     expect(fake.inserted[0]).not.toHaveProperty("status");

@@ -2,12 +2,15 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from "@/config/platform";
+import { LOCALE_TAGS } from "@/lib/i18n/locale";
+import { getLocale } from "@/lib/i18n/server";
 import { resolveSiteOrigin } from "@/lib/utils/site-url";
 import "./globals.css";
 
+// Cyrillic for the Macedonian public website; the app itself is English.
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   display: "swap",
 });
 
@@ -43,9 +46,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The public website is Macedonian by default (MK / EN switch); the app pages are English, but
+  // their <html lang> follows the visitor's choice too, so a Macedonian visitor's browser tools agree.
+  const locale = await getLocale();
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang={LOCALE_TAGS[locale].html} className={inter.variable}>
       <body className="flex min-h-dvh flex-col bg-canvas font-sans text-fg antialiased">
         <ToastProvider>{children}</ToastProvider>
       </body>

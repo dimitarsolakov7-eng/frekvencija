@@ -9,6 +9,7 @@
  * database (23505 on `access_requests_open_email_key`).
  */
 import type { BusinessType } from "@/lib/api/contracts";
+import { GENRE_RECOMMENDATION } from "@/lib/public/trial-request";
 import { isBusinessType, suggestStationName } from "./business-form";
 
 export type AccessRequestStatus = "new" | "contacted" | "approved" | "declined";
@@ -135,4 +136,13 @@ export function toAccessRequestPrefill(request: AccessRequestSource): AccessRequ
 /** /admin/businesses/new?fromRequest=<id> */
 export function createFromRequestHref(basePath: string, requestId: string): string {
   return `${basePath}/new?fromRequest=${encodeURIComponent(requestId)}`;
+}
+
+/**
+ * What the request card shows for `preferred_genre` of the public trial form: the catalogue genre
+ * the venue asked for, "Wants a recommendation" for the recommendation option, or "Not given".
+ */
+export function preferredGenreLabel(value: string | null | undefined): string {
+  if (!value || value.trim() === "") return "Not given";
+  return value === GENRE_RECOMMENDATION ? "Wants a recommendation" : value;
 }

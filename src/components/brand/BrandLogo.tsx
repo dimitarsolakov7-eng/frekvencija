@@ -3,19 +3,29 @@ import { PLATFORM_NAME } from "@/config/platform";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * The approved Frekvencija logo (green f/equaliser emblem + lowercase wordmark), never with a domain
- * suffix. `tone="ivory"` is the dark-interface variant (ivory wordmark), `tone="dark"` is for light
- * backgrounds. Generated from design/assets by `npm run brand:assets`.
+ * The approved Frekvencija logo (f/equaliser emblem + lowercase wordmark), never with a domain
+ * suffix. `tone="ivory"` is the dark-interface variant (green emblem, ivory wordmark), `tone="dark"`
+ * is for light backgrounds such as email (green emblem, dark wordmark) and `tone="cobalt"` is the
+ * public website's adaptation (cobalt emblem, charcoal wordmark). Generated from design/assets by
+ * `npm run brand:assets`.
  */
 const LOGOS = {
   ivory: { src: "/brand/frekvencija-logo-ivory.png", width: 1200, height: 274 },
   dark: { src: "/brand/frekvencija-logo-dark.png", width: 1200, height: 274 },
+  cobalt: { src: "/brand/frekvencija-logo-cobalt.png", width: 1200, height: 274 },
+} as const;
+
+const EMBLEMS = {
+  green: "/brand/frekvencija-emblem.png",
+  cobalt: "/brand/frekvencija-emblem-cobalt.png",
 } as const;
 
 const HEIGHTS = { sm: "h-6", md: "h-8", lg: "h-10", xl: "h-14" } as const;
 
+export type BrandLogoTone = keyof typeof LOGOS;
+
 export interface BrandLogoProps {
-  tone?: keyof typeof LOGOS;
+  tone?: BrandLogoTone;
   size?: keyof typeof HEIGHTS;
   /** Above-the-fold logo (hero / sidebar): load eagerly with high fetch priority instead of lazily. */
   priority?: boolean;
@@ -39,11 +49,19 @@ export function BrandLogo({ tone = "ivory", size = "md", priority = false, class
   );
 }
 
+export interface BrandEmblemProps {
+  className?: string;
+  /** Accessible name; without it the emblem is decorative. */
+  label?: string;
+  /** `green` (the app) or `cobalt` (the public website). */
+  tone?: keyof typeof EMBLEMS;
+}
+
 /** The emblem alone (compact headers, avatars, loading states). Decorative unless `label` is given. */
-export function BrandEmblem({ className, label }: { className?: string; label?: string }) {
+export function BrandEmblem({ className, label, tone = "green" }: BrandEmblemProps) {
   return (
     <Image
-      src="/brand/frekvencija-emblem.png"
+      src={EMBLEMS[tone]}
       width={512}
       height={512}
       alt={label ?? ""}

@@ -62,6 +62,7 @@ import {
   accessRequestActions,
   createFromRequestHref,
   isOpenAccessRequestStatus,
+  preferredGenreLabel,
   type AccessRequestStatus,
 } from "./access-request-rules";
 import { IDLE_STATE, type AccessRequestActions, type AccessRequestNotesState } from "./action-types";
@@ -341,6 +342,16 @@ function RequestCard({
               ) : (
                 <span className="text-fg-subtle">Not given</span>
               )}
+            </dd>
+          </div>
+          <div className="grid gap-0.5">
+            <dt className="text-fg-muted">City</dt>
+            <dd className={cn("break-words", request.city ? "font-medium text-fg" : "text-fg-subtle")}>{request.city ?? "Not given"}</dd>
+          </div>
+          <div className="grid gap-0.5 sm:col-span-2">
+            <dt className="text-fg-muted">Preferred genre</dt>
+            <dd className={cn("break-words", request.preferredGenre ? "font-medium text-fg" : "text-fg-subtle")}>
+              {preferredGenreLabel(request.preferredGenre)}
             </dd>
           </div>
           <div className="grid gap-0.5 sm:col-span-3">
