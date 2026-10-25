@@ -108,6 +108,7 @@ describe("demo removal (in-memory Supabase)", () => {
     expect(removal.genres).toEqual([]);
     expect(removal.reopenGenres.map((g) => g.name)).toEqual(["Jazz", "Balkan Hits"]);
     expect(summary).toEqual({ businesses: 2, announcements: 6, users: 2, tracks: 21, genres: 0, genresReopened: 2, objects: 6 + 2 + 21 + 1 });
+    expect(formatRemovePlan(removal)).toContain("Total: 2 businesses, 2 users, 21 tracks.");
 
     for (const table of ["businesses", "announcements", "business_members", "business_genre_access", "tracks", "track_genres"]) {
       expect(db.rows(table), table).toEqual([]);

@@ -13,6 +13,17 @@ export function createScriptAdminClient(config: SupabaseAdminConfig): AdminClien
   });
 }
 
+/**
+ * A gateway's HTML error page instead of JSON (e.g. Cloudflare's "521: Web server is down" while a
+ * paused Supabase project is still starting): keep its title, not the whole document.
+ */
+function summariseHtml(text: string): string {
+  if (!/^\s*<(!doctype html|html)/i.test(text)) return text;
+  const title = /<title>([^<]*)<\/title>/i.exec(text)?.[1]?.trim();
+  const hint = /52\d|web server is down|bad gateway|service unavailable/i.test(title ?? "") ? " (is the Supabase project paused or still starting?)" : "";
+  return `${title ? `HTTP error page: ${title}` : "HTTP error page instead of a JSON response"}${hint}`;
+}
+
 /** One-line description of a Supabase (Postgrest/Auth/Storage) or other error. Never includes keys. */
 export function describeError(error: unknown): string {
   if (error instanceof Error || (typeof error === "object" && error !== null)) {
@@ -24,7 +35,7 @@ export function describeError(error: unknown): string {
       details?: unknown;
       hint?: unknown;
     };
-    const text = typeof message === "string" && message ? message : "Unknown error";
+    const text = summariseHtml(typeof message === "string" && message ? message : "Unknown error");
     const parts = [text];
     const codes = [code, statusCode ?? status].filter((value) => (typeof value === "string" && value !== "") || typeof value === "number");
     if (codes.length > 0) parts.push(`(${codes.join(", ")})`);

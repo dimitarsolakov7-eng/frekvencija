@@ -113,4 +113,13 @@ describe("describeError", () => {
       describeError({ message: "TypeError: fetch failed", code: "", details: "TypeError: fetch failed\n\nCaused by: Error: connect ECONNREFUSED\n    at x (y.js:1:1)" }),
     ).toBe("TypeError: fetch failed - Caused by: Error: connect ECONNREFUSED");
   });
+
+  it("reduces a gateway's HTML error page to its title", () => {
+    const page = "<!DOCTYPE html>\n<html lang=\"en-US\"><head>\n<title>supabase.co | 521: Web server is down</title>\n</head><body><h1>Web server is down</h1></body></html>";
+    expect(describeError({ message: page, code: "", details: "" })).toBe(
+      "HTTP error page: supabase.co | 521: Web server is down (is the Supabase project paused or still starting?)",
+    );
+    expect(describeError({ message: "<html><body>Forbidden</body></html>" })).toBe("HTTP error page instead of a JSON response");
+    expect(describeError({ message: "<p>not a page</p>" })).toBe("<p>not a page</p>");
+  });
 });

@@ -343,7 +343,7 @@ export function buildRemovePlan(state: DemoState, options: { genres: boolean; en
 
 export function formatRemovePlan(plan: RemovePlan): string {
   const out: string[] = [];
-  const n = (count: number, noun: string) => `${count} ${noun}${count === 1 ? "" : "s"}`;
+  const n = (count: number, noun: string) => `${count} ${count === 1 ? noun : noun === "business" ? "businesses" : `${noun}s`}`;
 
   out.push(`\nBusinesses (${plan.businesses.length}; with their announcements, logo, genre access and staff memberships)`);
   out.push(
