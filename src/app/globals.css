@@ -82,62 +82,28 @@
   --animate-drawer-in-right: drawer-in-right 200ms ease-out;
   --animate-drawer-in-left: drawer-in-left 200ms ease-out;
   --animate-drawer-in-bottom: drawer-in-bottom 200ms ease-out;
-  /* Public website motion (src/components/public): entrances and the frequency-line drift. */
-  --animate-rise: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-fade-up: fade-up 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-console-in: console-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  --animate-freq-drift: freq-drift 16s ease-in-out infinite alternate;
-  --animate-pulse-soft: pulse-soft 2.4s ease-in-out infinite;
+  /* Public website (src/components/public/site): the expo-out curve shared by CSS and GSAP motion. */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Decorative equaliser bars: four short swells, then they rest at full height (under 5 seconds). */
+  --animate-eq-once: eq-settle 1.1s ease-in-out 4 both;
+  --animate-cue: cue 1.8s cubic-bezier(0.16, 1, 0.3, 1) 3;
 
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(28px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  @keyframes console-in {
-    from {
-      opacity: 0;
-      transform: translateY(36px) scale(0.985);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  @keyframes freq-drift {
-    from {
-      transform: translateX(-2%);
-    }
-    to {
-      transform: translateX(2%);
-    }
-  }
-
-  @keyframes pulse-soft {
+  @keyframes eq-settle {
     0%,
     100% {
-      opacity: 0.55;
+      transform: scaleY(1);
     }
     50% {
-      opacity: 1;
+      transform: scaleY(0.35);
+    }
+  }
+
+  @keyframes cue {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
     }
   }
 
@@ -221,8 +187,9 @@
 @theme inline {
   --font-sans: var(--font-inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  /* Editorial display face of the public website (Playfair Display, loaded by the public layout). */
-  --font-display: var(--font-playfair, "Playfair Display", Georgia, "Times New Roman", serif);
+  /* Public website faces (loaded by src/app/(public)/_lib/fonts.ts, both with Macedonian Cyrillic). */
+  --font-display: var(--font-sofia, "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif);
+  --font-serif: var(--font-cormorant, "Cormorant Garamond", Georgia, serif);
 }
 
 @layer base {
@@ -463,178 +430,235 @@
 }
 
 /*
- * Public website themes (docs/WEBSITE.md). The marketing site is bright: warm ivory, cobalt blue and
- * charcoal. Instead of a second component library, the three scopes below re-map the semantic tokens,
- * so every primitive (buttons, fields, accordion, drawer, alerts) keeps working inside them:
- *   .theme-public   the ivory page (src/app/(public)/layout.tsx wraps everything in it)
- *   .theme-charcoal the dark statement section (announcements)
- *   .theme-cobalt   the trial section (white text on cobalt; its form panel is .theme-public again)
- * The app itself (venue radio, admin, sign-in) keeps the dark evergreen tokens of the @theme block.
- * Contrast: fg-muted #61656f is ≥ 4.5:1 on ivory, white and stone; border-input #8a867e ≥ 3:1 on
- * white and ivory; white on cobalt #2d4bff ≈ 5.9:1; accent-text #8fa3ff on charcoal ≈ 7:1.
+ * Public website (v3, docs/WEBSITE.md): a dark, cinematic "night broadcast" look — warm near-black,
+ * ivory type and one signal colour (vermillion). Instead of a second component library, the scopes
+ * below re-map the semantic tokens, so every primitive (buttons, fields, alerts) keeps working:
+ *   .theme-night  the whole public site (src/app/(public)/layout.tsx wraps everything in it)
+ *   .theme-paper  light panels inside it (the trial form card)
+ * The app itself (venue radio, admin, sign-in) keeps the evergreen tokens of the @theme block.
+ * Contrast on canvas #0c0a09: fg 17:1, fg-muted 7.6:1, fg-subtle 5.2:1, accent-text 7.6:1, accent
+ * (#ff5b2e) 6.4:1; accent-fg on accent 6.3:1; border-input 4:1 on surface. Paper: fg-muted 6.8:1,
+ * accent-text #c2410c 4.9:1, border-input 3.9:1 on white.
  */
 @layer base {
-  .theme-public {
+  .theme-night {
+    color-scheme: dark;
+    interpolate-size: allow-keywords;
+    --color-canvas: #0c0a09;
+    --color-sidebar: #12100e;
+    --color-surface: #171412;
+    --color-surface-2: #1f1b18;
+    --color-surface-3: #2a2521;
+    --color-control: #120f0d;
+    --color-border: #2b2622;
+    --color-border-strong: #3d3631;
+    --color-border-input: #7d746b;
+    --color-border-input-hover: #978d82;
+    --color-fg: #f3ede4;
+    --color-fg-muted: #a8a097;
+    --color-fg-subtle: #8a8279;
+    --color-accent: #ff5b2e;
+    --color-accent-hover: #ff7448;
+    --color-accent-active: #e94a1f;
+    --color-accent-fg: #140805;
+    --color-accent-text: #ff7a52;
+    --color-success: #4ade80;
+    --color-warning: #f5b544;
+    --color-danger: #ff8a80;
+    --color-danger-solid: #dc2626;
+    --color-danger-solid-hover: #b91c1c;
+    --color-info: #93c5fd;
+    --color-ring: #ff9a76;
+    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 20px 48px -28px rgb(0 0 0 / 0.9);
+    --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.06), 0 32px 80px -24px rgb(0 0 0 / 0.9);
+    background-color: var(--color-canvas);
+    color: var(--color-fg);
+  }
+
+  .theme-paper {
     color-scheme: light;
-    --color-canvas: #f5f2ec;
-    --color-sidebar: #ece8e1;
-    --color-surface: #ffffff;
-    --color-surface-2: #ece8e1;
-    --color-surface-3: #e2ded6;
+    --color-canvas: #f3ede4;
+    --color-sidebar: #ebe4d9;
+    --color-surface: #fbf8f3;
+    --color-surface-2: #f1ebe2;
+    --color-surface-3: #e6ded2;
     --color-control: #ffffff;
-    --color-border: #dfdbd3;
-    --color-border-strong: #c9c4ba;
-    --color-border-input: #8a867e;
-    --color-border-input-hover: #6f6b63;
-    --color-fg: #191b22;
-    --color-fg-muted: #61656f;
-    --color-fg-subtle: #6b6f7b;
-    --color-accent: #2d4bff;
-    --color-accent-hover: #2440e6;
-    --color-accent-active: #1c35c7;
-    --color-accent-fg: #ffffff;
-    --color-accent-text: #2d4bff;
+    --color-border: #ddd4c8;
+    --color-border-strong: #c9bfb2;
+    --color-border-input: #8a7f73;
+    --color-border-input-hover: #6f655a;
+    --color-fg: #14110f;
+    --color-fg-muted: #5f574f;
+    --color-fg-subtle: #6b6359;
+    --color-accent: #ff5b2e;
+    --color-accent-hover: #ff7448;
+    --color-accent-active: #e94a1f;
+    --color-accent-fg: #140805;
+    --color-accent-text: #c2410c;
     --color-success: #0f7b4f;
     --color-warning: #8a5a00;
-    --color-danger: #b3261e;
+    --color-danger: #b42318;
     --color-danger-solid: #d92d20;
     --color-danger-solid-hover: #b42318;
     --color-info: #1d4ed8;
-    --color-ring: #2d4bff;
-    --shadow-card: 0 1px 2px rgb(25 27 34 / 0.05), 0 16px 40px -24px rgb(25 27 34 / 0.22);
-    --shadow-overlay: 0 0 0 1px rgb(25 27 34 / 0.06), 0 28px 70px -24px rgb(25 27 34 / 0.3);
-    background-color: var(--color-canvas);
+    --color-ring: #c2410c;
+    --shadow-card: 0 1px 2px rgb(20 17 15 / 0.06), 0 16px 40px -24px rgb(20 17 15 / 0.25);
+    background-color: var(--color-surface);
     color: var(--color-fg);
   }
 
-  .theme-charcoal {
+  /* The root paints the page colour behind overscroll; the public site is dark. */
+  html:has(.theme-night) {
+    background-color: #0c0a09;
     color-scheme: dark;
-    --color-canvas: #191b22;
-    --color-sidebar: #1f222b;
-    --color-surface: #22252f;
-    --color-surface-2: #2a2e39;
-    --color-surface-3: #333744;
-    --color-control: #1f222b;
-    --color-border: #343845;
-    --color-border-strong: #454a59;
-    --color-border-input: #8a8f9e;
-    --color-border-input-hover: #a3a8b6;
-    --color-fg: #f5f2ec;
-    --color-fg-muted: #b4b8c3;
-    --color-fg-subtle: #9ca1ae;
-    --color-accent: #3d5bff;
-    --color-accent-hover: #5570ff;
-    --color-accent-active: #2d4bff;
-    --color-accent-fg: #ffffff;
-    --color-accent-text: #8fa3ff;
-    --color-success: #4ade80;
-    --color-warning: #fbbf24;
-    --color-danger: #f87171;
-    --color-info: #93c5fd;
-    --color-ring: #8fa3ff;
-    --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 16px 40px -24px rgb(0 0 0 / 0.7);
-    --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.05), 0 28px 70px -24px rgb(0 0 0 / 0.8);
-    background-color: var(--color-canvas);
-    color: var(--color-fg);
+    scrollbar-color: #3d3631 #0c0a09;
   }
 
-  .theme-cobalt {
-    color-scheme: dark;
-    --color-canvas: #2d4bff;
-    --color-sidebar: #2744ea;
-    --color-surface: #3a57ff;
-    --color-surface-2: #4762ff;
-    --color-surface-3: #5a73ff;
-    --color-control: #2744ea;
-    --color-border: #6b80ff;
-    --color-border-strong: #94a4ff;
-    --color-border-input: #c7d0ff;
-    --color-border-input-hover: #e2e7ff;
-    --color-fg: #ffffff;
-    --color-fg-muted: #dfe4ff;
-    --color-fg-subtle: #c7d0ff;
-    --color-accent: #ffffff;
-    --color-accent-hover: #eef1ff;
-    --color-accent-active: #dfe4ff;
-    --color-accent-fg: #2d4bff;
-    --color-accent-text: #ffffff;
-    --color-ring: #ffffff;
-    --shadow-card: 0 16px 40px -24px rgb(12 20 80 / 0.6);
-    --shadow-overlay: 0 0 0 1px rgb(255 255 255 / 0.12), 0 28px 70px -24px rgb(12 20 80 / 0.7);
-    background-color: var(--color-canvas);
-    color: var(--color-fg);
-  }
-
-  /* The root paints the page colour behind overscroll; the public site is bright. */
-  html:has(.theme-public) {
-    background-color: #f5f2ec;
-    color-scheme: light;
-    scrollbar-color: #c9c4ba #f5f2ec;
-  }
-
-  .theme-public ::selection {
-    background-color: rgb(45 75 255 / 0.2);
-    color: #191b22;
+  .theme-night ::selection {
+    background-color: rgb(255 91 46 / 0.35);
+    color: #f3ede4;
   }
 }
 
 @layer components {
+  /* Lenis smooth scrolling (from lenis/dist/lenis.css). */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis:not(.lenis-autoToggle).lenis-stopped {
+    overflow: clip;
+  }
+
+  .lenis [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
+  }
+
   /*
-   * Scroll reveals of the public website (<Reveal>). Content is visible by default; the component only
-   * hides an element after hydration when it is below the fold (and motion is allowed), then animates
-   * it in when it scrolls into view. Nothing depends on JavaScript to become visible.
+   * Motion boot (src/components/public/site/motion/boot.ts): while html.motion is set, elements that
+   * GSAP reveals start hidden, so they never flash before their entrance. The boot script only sets
+   * it when motion is allowed and removes it again if the page never hydrates, so without JavaScript
+   * or with reduced motion everything is simply visible.
    */
-  [data-reveal="pending"] {
-    opacity: 0;
-    transform: translateY(22px);
+  .motion [data-anim] {
+    visibility: hidden;
   }
 
-  [data-reveal="in"] {
-    animation: rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  /* The first-visit intro overlay exists in the markup but only shows when the boot script asks. */
+  [data-intro] {
+    display: none;
   }
 
-  /* Playing-only waveform bars of the radio console; `--bar-scale` is set per bar from the analyser. */
-  .console-bar {
-    transform: scaleY(var(--bar-scale, 0.2));
-    transform-origin: center;
-    transition: transform 90ms linear;
+  .intro-on [data-intro] {
+    display: flex;
+  }
+
+  /* SplitText line masks: room for accents and descenders under the tight display leading. */
+  .split-line-mask {
+    padding-block: 0.12em;
+    margin-block: -0.12em;
+  }
+
+  /* Film grain over photography (decorative). */
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+  }
+
+  /* FAQ rows open and close smoothly where ::details-content is supported (instantly elsewhere). */
+  .faq-item::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 500ms var(--ease-expo),
+      content-visibility 500ms allow-discrete;
+  }
+
+  .faq-item[open]::details-content {
+    block-size: auto;
+  }
+
+  /* Spotlight that follows the pointer on feature cards (--mx/--my set by <SpotlightCard>). */
+  .spotlight {
+    background-image: radial-gradient(26rem circle at var(--mx, 50%) var(--my, 0%), rgb(255 91 46 / 0.13), transparent 60%);
   }
 }
 
-/* Editorial display sizes of the public website (Playfair Display via `font-display`). */
+/* Display type of the public website: Sofia Sans Extra Condensed, uppercase, tight. */
+
+/*
+ * The hero promise sizes itself to its column (an @container): the longest Macedonian line is ~5.1em
+ * wide, so 19cqi keeps every line on one line; svh keeps the hero within short laptop screens.
+ */
+@utility display-hero {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, min(19cqi, 17svh), 9.5rem);
+  line-height: 0.84;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
 @utility display-xl {
   font-family: var(--font-display);
-  font-size: clamp(2.75rem, 1.4rem + 5.6vw, 6.25rem);
-  line-height: 1.02;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-size: clamp(3rem, 1.5rem + 6vw, 8.25rem);
+  line-height: 0.86;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
   text-wrap: balance;
 }
 
 @utility display-lg {
   font-family: var(--font-display);
-  font-size: clamp(2.125rem, 1.3rem + 3.1vw, 4rem);
-  line-height: 1.06;
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  font-size: clamp(2.5rem, 1.5rem + 3.6vw, 5.25rem);
+  line-height: 0.9;
+  font-weight: 800;
+  text-transform: uppercase;
   text-wrap: balance;
 }
 
 @utility display-md {
   font-family: var(--font-display);
-  font-size: clamp(1.625rem, 1.2rem + 1.7vw, 2.5rem);
-  line-height: 1.12;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.875rem, 1.35rem + 1.7vw, 3rem);
+  line-height: 0.94;
+  font-weight: 750;
+  text-transform: uppercase;
   text-wrap: balance;
 }
 
-@utility display-sm {
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 1.05rem + 0.9vw, 1.75rem);
-  line-height: 1.2;
+/* Editorial italic accent (Cormorant Garamond) for quotes and highlighted words. */
+@utility serif-accent {
+  font-family: var(--font-serif);
+  font-style: italic;
   font-weight: 500;
-  text-wrap: balance;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+
+/* Small monospaced uppercase labels: section numbers, "ON AIR", timestamps. */
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Outlined display text (decorative marquee rows). */
+@utility text-outline {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--color-fg-subtle);
 }
 
 /* Minimal motion for people who ask for it: animations stop, transitions become instant. */

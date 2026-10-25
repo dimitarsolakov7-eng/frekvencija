@@ -1,11 +1,11 @@
 /**
- * Shape of the public website's copy. Both languages (mk.ts, en.ts) must provide every key, which
+ * Shape of the public website's copy (v3). Both languages (mk.ts, en.ts) must provide every key, which
  * TypeScript enforces. Everything is plain data (strings, arrays, records) so it can be passed from
- * Server Components to Client Components; `{name}` placeholders are filled with `fill()` from
- * `@/lib/i18n/locale`.
+ * Server Components to Client Components. `{name}`-style placeholders are filled with `fill()` from
+ * `@/lib/i18n/locale`; in the manifesto, `*words*` mark the highlighted phrases.
  */
 import type { Locale } from "@/lib/i18n/locale";
-import type { VenueTypeKey } from "@/config/site";
+import type { StatKey, VenueTypeKey } from "@/config/site";
 
 export type AnnouncementExampleKey = "identity" | "offer" | "event";
 
@@ -15,6 +15,8 @@ export interface AnnouncementExampleCopy {
   /** Uses `{name}` for the venue name. */
   text: string;
 }
+
+export type FeatureKey = "name" | "noAds" | "offers" | "hours" | "browser" | "staff";
 
 export interface TrialFormCopy {
   venueName: string;
@@ -39,6 +41,10 @@ export interface TrialFormCopy {
   /** Short privacy acknowledgement under the button; `{privacy}` marks the link text. */
   privacyNote: string;
   privacyLinkLabel: string;
+  /** Singular venue type names for the select. */
+  venueTypes: Record<VenueTypeKey, string>;
+  /** Name of the "other" venue type option. */
+  otherType: string;
 }
 
 export interface TrialFormMessages {
@@ -74,18 +80,22 @@ export interface SiteCopy {
   common: {
     skipToContent: string;
     brandHome: string;
-    exampleBadge: string;
-    illustrativeNote: string;
-    closeMenu: string;
-    openMenu: string;
     menuTitle: string;
+    openMenu: string;
+    closeMenu: string;
     languageSwitch: string;
     /** `{language}` = the language being switched to. */
     switchTo: string;
+    scrollCue: string;
+    pauseMotion: string;
+    playMotion: string;
+    exampleBadge: string;
+    /** Quotation marks of the language („ “ in Macedonian, “ ” in English). */
+    quotes: { open: string; close: string };
   };
   nav: {
     howItWorks: string;
-    listen: string;
+    features: string;
     venues: string;
     plans: string;
     faq: string;
@@ -95,93 +105,91 @@ export interface SiteCopy {
     trialCta: string;
     trialCtaShort: string;
   };
+  intro: {
+    tuning: string;
+  };
   hero: {
-    eyebrow: string;
-    titleLines: readonly [string, string];
+    /** `{count}` = the number of venues on air. */
+    onAir: string;
+    titleLines: readonly [string, string, string];
     lead: string;
     primaryCta: string;
     secondaryCta: string;
-    photoAlt: readonly string[];
+    card: { label: string; station: string; genre: string; time: string; quote: string };
   };
-  console: {
-    eyebrow: string;
-    stationName: string;
-    genreLabel: string;
-    genre: string;
-    play: string;
-    pause: string;
-    loading: string;
-    volume: string;
-    sampleAnnouncement: string;
-    stopSample: string;
-    statusReady: string;
-    statusPlaying: string;
-    statusPaused: string;
-    statusLoading: string;
-    unavailableTitle: string;
-    unavailableBody: string;
-    errorBody: string;
-    retry: string;
+  marquee: {
+    label: string;
   };
-  personalizer: {
-    eyebrow: string;
+  manifesto: {
+    label: string;
+    /** `*phrase*` marks a highlighted phrase. */
+    text: string;
+    photoAlt: string;
+  };
+  stats: {
+    label: string;
     title: string;
-    lead: string;
-    venueNameLabel: string;
-    venueNamePlaceholder: string;
-    venueTypeLabel: string;
-    previewLabel: string;
-    emptyName: string;
-    note: string;
-    examplesTitle: string;
-    examples: readonly AnnouncementExampleCopy[];
-    playExample: string;
-    exampleUnavailable: string;
-  };
-  benefits: {
-    eyebrow: string;
-    statement: string;
-    items: readonly { title: string; body: string }[];
-  };
-  venues: {
-    eyebrow: string;
-    title: string;
-    lead: string;
-    selectorLabel: string;
-    momentLabel: string;
-    recommendedLabel: string;
-    noRecommendation: string;
-    items: Record<VenueTypeKey, { name: string; moment: string; body: string; imageAlt: string }>;
+    items: Record<StatKey, string>;
+    photoAlt: string;
   };
   howItWorks: {
-    eyebrow: string;
+    label: string;
     title: string;
     steps: readonly { title: string; body: string }[];
     note: string;
+    progress: string;
   };
-  genres: {
-    eyebrow: string;
+  features: {
+    label: string;
+    title: string;
+    items: Record<FeatureKey, { title: string; body: string }>;
+    nameQuote: { lead: string; tail: string };
+    adsCaption: string;
+    offerChip: string;
+    hours: readonly { time: string; genre: string }[];
+    devices: string;
+  };
+  venues: {
+    label: string;
     title: string;
     lead: string;
-    /** `{genre}` = the genre name. */
-    preview: string;
-    sourceNote: string;
-    descriptions: Record<string, string>;
-    fallbackDescription: string;
+    recommendedLabel: string;
+    items: Record<VenueTypeKey, { name: string; moment: string; body: string; imageAlt: string }>;
   };
   announcements: {
-    eyebrow: string;
-    titleLines: readonly [string, string];
+    label: string;
+    title: string;
     lead: string;
-    sequenceLabel: string;
-    sequence: readonly { label: string; kind: "music" | "voice" }[];
-    examplesLabel: string;
+    inputLabel: string;
+    inputPlaceholder: string;
+    previewLabel: string;
+    note: string;
     examples: readonly AnnouncementExampleCopy[];
-    frequencyNote: string;
-    privacyNote: string;
+    timelineLabel: string;
+    music: string;
+    voice: string;
+  };
+  plans: {
+    label: string;
+    title: string;
+    lead: string;
+    unpublishedTitle: string;
+    unpublishedLead: string;
+    requestPricing: string;
+    perMonth: string;
+    vatNote: string;
+    includesTitle: string;
+    includes: readonly string[];
+    choose: string;
+    photoAlt: string;
+  };
+  faq: {
+    label: string;
+    title: string;
+    items: readonly { question: string; answer: string }[];
   };
   trial: {
-    eyebrow: string;
+    label: string;
     title: string;
     lead: string;
     activationNote: string;
@@ -198,27 +206,10 @@ export interface SiteCopy {
     backHome: string;
     sendAnother: string;
   };
-  plans: {
-    eyebrow: string;
-    title: string;
-    lead: string;
-    unpublishedTitle: string;
-    unpublishedLead: string;
-    requestPricing: string;
-    perMonth: string;
-    vatNote: string;
-    includesTitle: string;
-    includes: readonly string[];
-    choose: string;
-  };
-  faq: {
-    eyebrow: string;
-    title: string;
-    items: readonly { question: string; answer: string }[];
-  };
   footer: {
+    ctaTitle: string;
+    ctaButton: string;
     tagline: string;
-    navLabel: string;
     siteLabel: string;
     legalLabel: string;
     contactLabel: string;
@@ -227,6 +218,7 @@ export interface SiteCopy {
     terms: string;
     /** `{year}` = the current year. */
     rights: string;
+    credits: string;
   };
   policy: {
     eyebrow: string;
@@ -239,6 +231,7 @@ export interface SiteCopy {
     notPublishedBody: string;
     unavailableTitle: string;
     unavailableBody: string;
+    /** `{noun}` = "privacy policy" / "terms of service". */
     questions: string;
     contactUs: string;
     /** `{email}` = the owner's address. */

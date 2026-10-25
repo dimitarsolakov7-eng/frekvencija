@@ -5,7 +5,7 @@ import type { SiteCopy } from "@/content/site/types";
 import type { PublicSettingsResult } from "@/lib/data/public";
 import { fill } from "@/lib/i18n/locale";
 import { policyParagraphs } from "./policy-text";
-import { Container, Eyebrow } from "./site/primitives";
+import { Container, SectionLabel } from "./site/primitives";
 
 export interface PolicyPageProps {
   copy: SiteCopy["policy"];
@@ -17,13 +17,13 @@ export interface PolicyPageProps {
 function ContactPath({ copy, contactEmail }: { copy: SiteCopy["policy"]; contactEmail: string | null }) {
   if (contactEmail) {
     return (
-      <ButtonLink href={`mailto:${contactEmail}`} variant="secondary" className="rounded-full!" icon={<Mail aria-hidden="true" />}>
+      <ButtonLink href={`mailto:${contactEmail}`} variant="outline" className="rounded-full! border-fg/30!" icon={<Mail aria-hidden="true" />}>
         {fill(copy.emailUs, { email: contactEmail })}
       </ButtonLink>
     );
   }
   return (
-    <ButtonLink href={sectionHref(SECTION_IDS.trial)} variant="secondary" className="rounded-full!" iconRight={<ArrowRight aria-hidden="true" />}>
+    <ButtonLink href={sectionHref(SECTION_IDS.trial)} variant="outline" className="rounded-full! border-fg/30!" iconRight={<ArrowRight aria-hidden="true" />}>
       {copy.contactUs}
     </ButtonLink>
   );
@@ -40,23 +40,23 @@ export function PolicyPage({ copy, kind, result }: PolicyPageProps) {
   const noun = kind === "privacyPolicy" ? copy.privacyNoun : copy.termsNoun;
 
   return (
-    <Container className="py-14 sm:py-20">
+    <Container className="pt-36 pb-24 sm:pt-44 sm:pb-32">
       <article className="mx-auto w-full max-w-3xl">
-        <header className="grid gap-4 border-b border-border pb-8">
-          <Eyebrow>{copy.eyebrow}</Eyebrow>
-          <h1 className="display-lg text-fg">{title}</h1>
+        <header className="grid gap-6 border-b border-border pb-10">
+          <SectionLabel>{copy.eyebrow}</SectionLabel>
+          <h1 className="display-xl text-fg">{title}</h1>
         </header>
 
         {paragraphs.length > 0 ? (
           <>
-            <div className="grid gap-5 pt-8 text-base leading-relaxed text-fg-muted sm:text-lg">
+            <div className="grid gap-5 pt-10 text-base leading-relaxed text-fg-muted sm:text-lg">
               {paragraphs.map((paragraph, index) => (
                 <p key={index} className="whitespace-pre-line break-words text-pretty">
                   {paragraph}
                 </p>
               ))}
             </div>
-            <footer className="mt-10 grid gap-3 border-t border-border pt-6">
+            <footer className="mt-12 grid gap-4 border-t border-border pt-8">
               <p className="text-sm text-fg-muted">{fill(copy.questions, { noun })}</p>
               <div>
                 <ContactPath copy={copy} contactEmail={settings?.contactEmail ?? null} />
@@ -64,18 +64,18 @@ export function PolicyPage({ copy, kind, result }: PolicyPageProps) {
             </footer>
           </>
         ) : result.status === "unavailable" ? (
-          <div className="grid gap-4 pt-8">
+          <div className="grid gap-5 pt-10">
             <Alert tone="warning" title={copy.unavailableTitle} description={copy.unavailableBody} />
             <div>
               <ContactPath copy={copy} contactEmail={null} />
             </div>
           </div>
         ) : (
-          <div className="grid gap-5 pt-8">
-            <div className="flex items-start gap-4 rounded-[22px] border border-border bg-surface p-5 shadow-card sm:p-6">
+          <div className="grid gap-6 pt-10">
+            <div className="flex items-start gap-4 rounded-[24px] border border-border bg-surface p-6 sm:p-8">
               <FileText aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-accent-text" />
-              <div className="grid gap-1.5">
-                <h2 className="text-lg font-semibold text-fg">{copy.notPublishedTitle}</h2>
+              <div className="grid gap-2">
+                <h2 className="text-xl font-semibold text-fg">{copy.notPublishedTitle}</h2>
                 <p className="text-fg-muted text-pretty">{fill(copy.notPublishedBody, { noun })}</p>
               </div>
             </div>

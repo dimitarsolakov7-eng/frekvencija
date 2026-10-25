@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * /request-access — the trial request on its own page (a stable link for emails and the sign-in
+ * /request-access — the free-trial request on its own page (a stable link for emails and the sign-in
  * page). Same form and server action as the homepage section; submissions land in the owner's
  * access-request list and nothing is activated automatically.
  */
@@ -35,7 +35,7 @@ export default async function RequestAccessPage() {
       aside={
         <p className="text-base text-fg-muted">
           {copy.trialPage.alreadyHaveAccount}{" "}
-          <Link href="/login" className={`${TEXT_LINK_CLASSES} text-fg decoration-fg/40 hover:decoration-fg`}>
+          <Link href="/login" className={TEXT_LINK_CLASSES}>
             {copy.trialPage.logIn}
           </Link>
         </p>

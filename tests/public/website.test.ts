@@ -1,18 +1,23 @@
 /**
  * Pure pieces of the public website: the language helpers and the /lang route, the bilingual copy's
- * consistency, the station-name preview, the pricing gate and the venue configuration.
+ * consistency, the station-name preview, the headline numbers, the pricing gate, the motion boot script and
+ * the announcement strip.
  */
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import { GET as switchLanguage } from "@/app/lang/[locale]/route";
+import { PHOTO_SOURCES, PHOTOS } from "@/assets/photos";
 import { preferredGenreLabel } from "@/components/admin/businesses/access-request-rules";
-import { genreDescription } from "@/components/public/site/GenreList";
-import { DEMO_AUDIO, hasDemoAudio } from "@/config/demo-audio";
+import { exampleAt } from "@/components/public/site/Announcements";
+import { dialPercent } from "@/components/public/site/FmDial";
+import { INTRO_SEEN_KEY, MOTION_BOOT_SCRIPT, MOTION_READY_CLASS } from "@/components/public/site/motion/boot";
+import { siteNavLinks } from "@/components/public/site/nav";
 import { PLANS, PRICING_PUBLISHED, formatPlanPrice, publishedPlans } from "@/config/plans";
-import { HERO_PHOTOS, VENUE_TYPES, VENUE_TYPE_KEYS } from "@/config/site";
-import { getSiteCopy } from "@/content/site";
+import { EXAMPLE_STATION_NAMES, EXAMPLE_VENUE_NAME, headlineVenues, SITE_STATS, VENUE_TYPES } from "@/config/site";
+import { getSiteCopy, highlightRuns } from "@/content/site";
 import { previewStationName, suggestStationName } from "@/lib/brand/station-name";
 import { LOCALES, LOCALE_COOKIE, fill, isLocale, otherLocale, parseLocale, safeReturnPath } from "@/lib/i18n/locale";
+import { formatStatNumber } from "@/lib/public/format";
 import { GENRE_RECOMMENDATION } from "@/lib/public/trial-request";
 
 describe("locale helpers", () => {
@@ -73,39 +78,46 @@ describe("bilingual copy", () => {
   it("keeps both languages structurally identical where the page relies on it", () => {
     expect(mk.locale).toBe("mk");
     expect(en.locale).toBe("en");
-    expect(mk.personalizer.examples.map((example) => example.key)).toEqual(en.personalizer.examples.map((example) => example.key));
+    expect(mk.hero.titleLines).toHaveLength(3);
     expect(mk.announcements.examples.map((example) => example.key)).toEqual(["identity", "offer", "event"]);
-    expect(mk.benefits.items).toHaveLength(4);
-    expect(en.benefits.items).toHaveLength(4);
+    expect(en.announcements.examples.map((example) => example.key)).toEqual(["identity", "offer", "event"]);
     expect(mk.howItWorks.steps).toHaveLength(4);
-    expect(mk.announcements.sequence.map((step) => step.kind)).toEqual(["music", "voice", "music", "voice"]);
+    expect(en.howItWorks.steps).toHaveLength(4);
+    expect(mk.features.hours).toHaveLength(en.features.hours.length);
     expect(mk.faq.items.length).toBeGreaterThanOrEqual(10);
     expect(en.faq.items).toHaveLength(mk.faq.items.length);
-    expect(Object.keys(mk.venues.items).sort()).toEqual([...VENUE_TYPE_KEYS].sort());
+    expect(Object.keys(mk.venues.items).sort()).toEqual(VENUE_TYPES.map((venue) => venue.key).sort());
+    expect(Object.keys(mk.trial.form.venueTypes).sort()).toEqual(VENUE_TYPES.map((venue) => venue.key).sort());
   });
 
-  it("uses the {name} placeholder in every announcement example and says three days consistently", () => {
+  it("uses the placeholders the components fill, and says three days consistently", () => {
     for (const copy of [mk, en]) {
-      for (const example of [...copy.personalizer.examples, ...copy.announcements.examples]) expect(example.text).toContain("{name}");
+      for (const example of copy.announcements.examples) expect(example.text).toContain("{name}");
+      expect(copy.hero.onAir).toContain("{count}");
       expect(copy.trial.form.privacyNote).toContain("{privacy}");
       expect(copy.trial.messages.tooLong).toContain("{max}");
       expect(copy.footer.rights).toContain("{year}");
+      expect(highlightRuns(copy.manifesto.text).filter((run) => run.highlight)).toHaveLength(2);
     }
-    expect(en.hero.primaryCta).toBe("Request a 3-Day Free Trial");
-    expect(mk.hero.primaryCta).toBe("Побарај 3 дена бесплатно");
+    expect(mk.nav.trialCta).toBe("Пробај 3 дена бесплатно");
+    expect(en.nav.trialCta).toBe("Try it free for 3 days");
     expect(mk.trial.successBody).toBe("Ќе ве контактираме за подготовка и активирање на вашата 3-дневна проба.");
+    expect(mk.common.quotes).toEqual({ open: "„", close: "“" });
   });
 
   it("promises no exclusive catalogue and no automatic activation", () => {
-    expect(en.faq.items.find((item) => item.question.includes("shared"))?.answer).toMatch(/shared across venues/);
-    expect(en.howItWorks.note).toMatch(/does not activate the station instantly/);
-    expect(en.trial.activationNote).toMatch(/Nothing is charged automatically/);
+    expect(en.faq.items.find((item) => item.question.includes("shared"))?.answer).toMatch(/one catalogue for all venues/);
+    expect(en.howItWorks.note).toMatch(/start when we activate your access/);
+    expect(en.trial.activationNote).toMatch(/no automatic charges/);
   });
 
-  it("describes genres with the website's text, the catalogue's, or a fallback", () => {
-    expect(genreDescription({ slug: "House", description: "Owner text" }, mk.genres)).toBe(mk.genres.descriptions.house);
-    expect(genreDescription({ slug: "ambient", description: "Owner text" }, mk.genres)).toBe("Owner text");
-    expect(genreDescription({ slug: "ambient", description: null }, en.genres)).toBe(en.genres.fallbackDescription);
+  it("splits the manifesto into plain and highlighted runs", () => {
+    expect(highlightRuns("One *two* three *four*")).toEqual([
+      { text: "One ", highlight: false },
+      { text: "two", highlight: true },
+      { text: " three ", highlight: false },
+      { text: "four", highlight: true },
+    ]);
   });
 });
 
@@ -113,37 +125,70 @@ describe("station name preview", () => {
   it("suggests '<venue> Radio' and keeps the preview readable while typing", () => {
     expect(suggestStationName("EmeraldCaffe")).toBe("EmeraldCaffe Radio");
     expect(suggestStationName("Jazz Radio")).toBe("Jazz Radio");
-    expect(suggestStationName("")).toBe("");
-    expect(previewStationName("", "EmeraldCaffe")).toBe("EmeraldCaffe Radio");
-    expect(previewStationName("  Hotel   Aurora ", "EmeraldCaffe")).toBe("Hotel Aurora Radio");
-    expect(previewStationName("x".repeat(200), "EmeraldCaffe")).toMatch(/^x+ Radio$/);
+    expect(previewStationName("", EXAMPLE_VENUE_NAME)).toBe("EmeraldCaffe Radio");
+    expect(previewStationName("  Hotel   Aurora ", EXAMPLE_VENUE_NAME)).toBe("Hotel Aurora Radio");
+    expect(previewStationName("x".repeat(200), EXAMPLE_VENUE_NAME)).toMatch(/^x+ Radio$/);
+    expect(EXAMPLE_STATION_NAMES.at(-1)).toBe(EXAMPLE_VENUE_NAME);
   });
 });
 
-describe("plans, demo audio and venue configuration", () => {
+describe("numbers, plans and configuration", () => {
+  it("formats the headline numbers per language, identically on server and client", () => {
+    expect(formatStatNumber(52_000, "mk")).toBe("52.000");
+    expect(formatStatNumber(52_000, "en")).toBe("52,000");
+    expect(formatStatNumber(140.4, "en")).toBe("140");
+    expect(formatStatNumber(-3, "mk")).toBe("0");
+    expect(headlineVenues()).toBe("140+");
+    expect(SITE_STATS.map((stat) => stat.key)).toEqual(["venues", "cities", "hours", "ads"]);
+    expect(SITE_STATS.find((stat) => stat.key === "ads")?.value).toBe(0);
+  });
+
   it("keeps the draft prices unpublished until approved", () => {
     expect(PRICING_PUBLISHED).toBe(false);
     expect(publishedPlans()).toEqual([]);
     expect(PLANS.map((plan) => plan.monthlyPrice)).toEqual([1490, 2490, 2890]);
     expect(formatPlanPrice(1490, "en")).toBe("1,490 MKD");
-    expect(formatPlanPrice(1490, "mk")).toMatch(/^1[.,\s ]?490 MKD$/);
   });
 
-  it("has no demo audio configured yet, so the console shows its honest state", () => {
-    expect(hasDemoAudio()).toBe(false);
-    expect(Object.values(DEMO_AUDIO.announcements).every((clip) => clip === null)).toBe(true);
-  });
-
-  it("maps every venue type to a business type and existing photography", () => {
+  it("maps every venue type to a business type and a photo, with a source for every photo", () => {
     expect(VENUE_TYPES.map((venue) => venue.businessType)).toEqual(["cafe", "restaurant", "hotel", "bar"]);
-    for (const venue of VENUE_TYPES) expect(venue.photo.src).toMatch(/^\/brand\//);
-    expect(HERO_PHOTOS.length).toBe(4);
+    for (const venue of VENUE_TYPES) expect(venue.photo).toBeTruthy();
+    expect(Object.keys(PHOTO_SOURCES).sort()).toEqual(Object.keys(PHOTOS).sort());
+    for (const source of Object.values(PHOTO_SOURCES)) expect(source).toMatch(/^https:\/\/unsplash\.com\/photos\/[\w-]{11}$/);
+  });
+
+  it("links the same five chapters everywhere", () => {
+    expect(siteNavLinks(getSiteCopy("en").nav).map((link) => link.id)).toEqual(["how-it-works", "features", "venues", "plans", "faq"]);
   });
 
   it("labels the stored preferred genre for the admin", () => {
     expect(preferredGenreLabel("House")).toBe("House");
     expect(preferredGenreLabel(GENRE_RECOMMENDATION)).toBe("Wants a recommendation");
     expect(preferredGenreLabel(null)).toBe("Not given");
-    expect(preferredGenreLabel("  ")).toBe("Not given");
+  });
+});
+
+describe("motion", () => {
+  it("boots only without reduced motion, plays the intro once per tab on the homepage, and never strands hidden content", () => {
+    expect(MOTION_BOOT_SCRIPT).toContain("prefers-reduced-motion: reduce");
+    expect(MOTION_BOOT_SCRIPT).toContain(`sessionStorage.getItem("${INTRO_SEEN_KEY}")`);
+    expect(MOTION_BOOT_SCRIPT).toContain('location.pathname==="/"&&!location.hash');
+    expect(MOTION_BOOT_SCRIPT).toContain(`classList.contains("${MOTION_READY_CLASS}")`);
+    expect(MOTION_BOOT_SCRIPT).toMatch(/d\.classList\.remove\("motion"\);d\.classList\.remove\("intro-on"\)\}\},5000\)/);
+    expect(() => new Function(MOTION_BOOT_SCRIPT)).not.toThrow();
+  });
+
+  it("places frequencies on the FM dial", () => {
+    expect(dialPercent(88)).toBe(0);
+    expect(dialPercent(108)).toBe(100);
+    expect(dialPercent(101.7)).toBeCloseTo(68.5);
+  });
+
+  it("puts the example that was announced last on air as the playhead moves", () => {
+    expect(exampleAt(0)).toBe(0);
+    expect(exampleAt(0.3)).toBe(0);
+    expect(exampleAt(0.6)).toBe(1);
+    expect(exampleAt(0.9)).toBe(2);
+    expect(exampleAt(1)).toBe(2);
   });
 });

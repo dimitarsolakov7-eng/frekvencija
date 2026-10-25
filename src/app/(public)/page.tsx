@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { AnnouncementShowcase } from "@/components/public/site/AnnouncementShowcase";
-import { Benefits } from "@/components/public/site/Benefits";
-import { FaqSection } from "@/components/public/site/FaqSection";
-import { GenreList } from "@/components/public/site/GenreList";
+import { PHOTOS } from "@/assets/photos";
+import { Announcements } from "@/components/public/site/Announcements";
+import { Faq } from "@/components/public/site/Faq";
+import { Features } from "@/components/public/site/Features";
+import { GenreMarquee } from "@/components/public/site/GenreMarquee";
 import { Hero } from "@/components/public/site/Hero";
 import { HowItWorks } from "@/components/public/site/HowItWorks";
-import { Personalizer } from "@/components/public/site/Personalizer";
-import { PhotoStrip } from "@/components/public/site/PhotoStrip";
-import { PlansSection } from "@/components/public/site/PlansSection";
+import { Intro } from "@/components/public/site/Intro";
+import { Manifesto } from "@/components/public/site/Manifesto";
+import { Plans } from "@/components/public/site/Plans";
+import { Stats } from "@/components/public/site/Stats";
 import { TrialSection } from "@/components/public/site/TrialSection";
-import { VenueShowcase } from "@/components/public/site/VenueShowcase";
-import { DEMO_AUDIO } from "@/config/demo-audio";
-import { EXAMPLE_VENUE_NAME, VENUE_TYPE_KEYS, type VenueTypeKey } from "@/config/site";
+import { Venues } from "@/components/public/site/Venues";
+import { EXAMPLE_VENUE_NAME, headlineVenues, SITE_STATS } from "@/config/site";
 import { getSiteCopy } from "@/content/site";
 import { loadPublicGenres, loadPublicSettings } from "@/lib/data/public";
 import { LOCALE_TAGS } from "@/lib/i18n/locale";
@@ -34,10 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * The public homepage, for everyone (signed-in users see it too, with a header link back into their
- * own area). Macedonian by default, English through the MK / EN switch. Section order: hero with the
- * radio console → photography → "how would your radio sound?" → benefits → venues → genres →
- * announcements → how it works → the trial request → plans → FAQ.
+ * The public homepage (v3, docs/WEBSITE.md), for everyone — signed-in users see it too, with a header link
+ * back into their own area. Macedonian by default, English through the MK / EN switch. A scroll story in
+ * chapters: hero → genres → (01) manifesto → (02) numbers → (03) how it works → (04) features →
+ * (05) venues → (06) announcements → (07) plans → (08) FAQ → (09) the free trial.
  */
 export default async function HomePage({ searchParams }: PageProps<"/">) {
   // An auth email template that points at the site root still works: its callback is forwarded to the
@@ -49,34 +50,26 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   const copy = getSiteCopy(locale);
   const genreOptions = genres.map((genre) => ({ slug: genre.slug, name: genre.name }));
   const contactEmail = settings.status === "ok" ? settings.settings.contactEmail : null;
-  const venueTypeNames = Object.fromEntries(VENUE_TYPE_KEYS.map((key) => [key, copy.venues.items[key].name])) as Record<VenueTypeKey, string>;
-  const photoAlts = VENUE_TYPE_KEYS.map((key) => copy.venues.items[key].imageAlt);
 
   return (
     <>
-      <Hero copy={copy} />
-      <PhotoStrip copy={copy.hero} />
-      <Personalizer
-        copy={copy.personalizer}
-        common={copy.common}
-        venueTypes={venueTypeNames}
-        exampleName={EXAMPLE_VENUE_NAME}
-        clips={DEMO_AUDIO.announcements}
+      <Intro label={copy.intro.tuning} />
+      <Hero copy={copy} venuesOnAir={headlineVenues()} />
+      <GenreMarquee
+        genres={genres.map((genre) => genre.name)}
+        label={copy.marquee.label}
+        pauseLabel={copy.common.pauseMotion}
+        playLabel={copy.common.playMotion}
       />
-      <Benefits copy={copy.benefits} photoAlts={photoAlts} />
-      <VenueShowcase copy={copy.venues} availableGenres={genreOptions} />
-      <GenreList copy={copy.genres} genres={genres} />
-      <AnnouncementShowcase
-        copy={copy.announcements}
-        common={copy.common}
-        personalizer={copy.personalizer}
-        exampleName={EXAMPLE_VENUE_NAME}
-        clips={DEMO_AUDIO.announcements}
-      />
-      <HowItWorks copy={copy.howItWorks} />
+      <Manifesto copy={copy.manifesto} photoAlt={copy.manifesto.photoAlt} />
+      <Stats copy={copy.stats} stats={SITE_STATS} locale={locale} photoAlt={copy.stats.photoAlt} />
+      <HowItWorks copy={copy.howItWorks} photos={[PHOTOS.cafeRoom, PHOTOS.lounge, PHOTOS.counter, PHOTOS.friends]} />
+      <Features copy={copy.features} />
+      <Venues copy={copy.venues} genres={genreOptions} />
+      <Announcements copy={copy.announcements} quotes={copy.common.quotes} exampleName={EXAMPLE_VENUE_NAME} />
+      <Plans copy={copy.plans} locale={locale} photoAlt={copy.plans.photoAlt} />
+      <Faq copy={copy.faq} />
       <TrialSection copy={copy} locale={locale} action={requestTrial} genres={genreOptions} contactEmail={contactEmail} />
-      <PlansSection copy={copy.plans} locale={locale} />
-      <FaqSection copy={copy.faq} />
     </>
   );
 }

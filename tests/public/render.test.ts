@@ -1,7 +1,7 @@
 /**
- * Server-render tests for the public website v2 (ivory / cobalt): section order, the Macedonian
- * default and the English version, honest demo and pricing states, the trial form, header and
- * footer variants, privacy/terms.
+ * Server-render tests for the public website v3 (night broadcast): chapter order, the Macedonian default and
+ * the English version, the hero and intro markup, the numbers, honest pricing, the trial form, header and
+ * footer, privacy/terms. Motion runs only in the browser, so the server output is the final readable state.
  */
 import { createElement as h, type ReactElement } from "react";
 import { renderToString } from "react-dom/server";
@@ -12,7 +12,6 @@ import HomePage from "@/app/(public)/page";
 import PrivacyPage from "@/app/(public)/privacy/page";
 import RequestAccessPage from "@/app/(public)/request-access/page";
 import TermsPage from "@/app/(public)/terms/page";
-import { RadioConsole } from "@/components/public/site/RadioConsole";
 import { SiteHeader } from "@/components/public/site/SiteHeader";
 import { TrialRequestResult } from "@/components/public/site/TrialRequestForm";
 import { PLANS } from "@/config/plans";
@@ -32,8 +31,11 @@ vi.mock("@/lib/data/public", async (importOriginal) => ({
   getPublicViewer: mocks.getPublicViewer,
 }));
 vi.mock("@/lib/i18n/server", () => ({ getLocale: mocks.getLocale }));
-// next/font needs the Next.js compiler; the layout only uses the class name.
-vi.mock("@/app/(public)/_lib/fonts", () => ({ display: { variable: "font-display-test", className: "font-display-test" } }));
+// next/font needs the Next.js compiler; the layout only uses the class names.
+vi.mock("@/app/(public)/_lib/fonts", () => ({
+  display: { variable: "font-display-test", className: "font-display-test" },
+  serif: { variable: "font-serif-test", className: "font-serif-test" },
+}));
 vi.mock("next/navigation", async () => ({ ...(await (await import("../auth/auth-mocks")).mockNavigation()), usePathname: () => "/" }));
 
 const render = (element: ReactElement) => renderToString(element);
@@ -51,19 +53,19 @@ function settings(overrides: Partial<Extract<PublicSettingsResult, { status: "ok
   };
 }
 
-const accountFor = (role: "platform_admin" | "business_user" | null, locale: Locale) => {
-  const { nav } = getSiteCopy(locale);
-  return role === "platform_admin"
-    ? { href: "/admin" as const, label: nav.adminWorkspace }
-    : role === "business_user"
-      ? { href: "/radio" as const, label: nav.openRadio }
-      : { href: "/login" as const, label: nav.logIn };
-};
-
 function header(role: "platform_admin" | "business_user" | null, locale: Locale = "mk") {
   const copy = getSiteCopy(locale);
-  return render(h(SiteHeader, { locale, nav: copy.nav, common: copy.common, account: accountFor(role, locale), signedIn: role !== null }));
+  const account =
+    role === "platform_admin"
+      ? { href: "/admin" as const, label: copy.nav.adminWorkspace }
+      : role === "business_user"
+        ? { href: "/radio" as const, label: copy.nav.openRadio }
+        : { href: "/login" as const, label: copy.nav.logIn };
+  return render(h(SiteHeader, { locale, nav: copy.nav, common: copy.common, account, signedIn: role !== null }));
 }
+
+/** Text content of the rendered HTML (tags removed, entities for quotes decoded). */
+const text = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -81,66 +83,59 @@ afterEach(() => {
 });
 
 describe("homepage (Macedonian by default)", () => {
-  it("renders the sections in order", async () => {
+  it("tells the story in chapters, in order", async () => {
     const html = render(await HomePage(props()));
-    const order = [
-      'aria-labelledby="hero-title"',
-      'id="listen"',
-      'id="benefits"',
-      'id="venues"',
-      'id="genres"',
-      'id="announcements"',
-      'id="how-it-works"',
-      'id="trial"',
-      'id="plans"',
-      'id="faq"',
-    ].map((marker) => html.indexOf(marker));
+    const order = ["top", "manifesto", "numbers", "how-it-works", "features", "venues", "announcements", "plans", "faq", "trial"].map((id) =>
+      html.indexOf(`id="${id}"`),
+    );
     expect(order.every((position) => position >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("uses the Macedonian hero copy with a single h1 and the two hero actions", async () => {
+  it("opens with a single h1 promise, the on-air line and both actions", async () => {
     const html = render(await HomePage(props()));
     expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toMatch(/<h1[^>]*>[\s\S]*Атмосферата почнува[\s\S]*со вистинскиот звук\.[\s\S]*<\/h1>/);
+    expect(text(html)).toContain("Вашиот локал.Вашиот звук.Вашето радио.");
+    expect(html).toContain("Во етер во 140+ локали");
     expect(html).toContain(mk.hero.lead);
-    expect(html).toMatch(/href="\/#trial"[^>]*>[\s\S]*?Побарај 3 дена бесплатно/);
-    expect(html).toMatch(/href="\/#listen"[^>]*>[\s\S]*?Слушни пример/);
+    expect(html).toMatch(/href="\/#trial"[^>]*>[\s\S]*?Пробај 3 дена бесплатно/);
+    expect(html).toMatch(/href="\/#how-it-works"[^>]*>[\s\S]*?Види како функционира/);
   });
 
-  it("shows the console as an example with an honest 'demo coming soon' state and no autoplaying audio", async () => {
+  it("renders the intro overlay as decoration only, hidden unless the boot script asks for it", async () => {
     const html = render(await HomePage(props()));
-    expect(html).toContain(mk.console.eyebrow);
+    const overlay = html.match(/<div[^>]*data-intro=""[^>]*>/)?.[0] ?? "";
+    expect(overlay).toContain('aria-hidden="true"');
+    expect(overlay).not.toMatch(/class="[^"]*\bflex\b(?!-)/);
+    expect(html).toContain(mk.intro.tuning);
+  });
+
+  it("marks the elements the motion layer reveals, and keeps the on-air card decorative", async () => {
+    const html = render(await HomePage(props()));
+    expect((html.match(/data-anim=""/g) ?? []).length).toBeGreaterThan(20);
+    expect(html).toMatch(/<div aria-hidden="true" data-hero-card=""/);
+    expect(html).not.toContain("<audio");
+  });
+
+  it("shows the headline numbers in their final form", async () => {
+    const html = render(await HomePage(props()));
+    for (const value of ["140+", "18", "52.000+", "0"]) expect(html).toContain(`>${value}</span>`);
+    for (const label of Object.values(mk.stats.items)) expect(html).toContain(label);
+  });
+
+  it("lists the catalogue genres for screen readers and in the moving rows", async () => {
+    const html = render(await HomePage(props()));
+    expect(html).toMatch(new RegExp(`<section aria-label="${mk.marquee.label}"`));
+    for (const name of ["House", "Lounge", "Jazz", "Deep House", "Balkan Hits", "Chillout"]) expect(html).toContain(`<li>${name}</li>`);
+  });
+
+  it("lets a visitor preview their station and shows the example announcements", async () => {
+    const html = render(await HomePage(props()));
+    expect(html).toContain(mk.announcements.title);
+    expect(html).toContain(mk.announcements.note);
     expect(html).toContain("EmeraldCaffe Radio");
-    expect(html).toContain(mk.console.unavailableTitle);
-    expect(html).toContain(mk.console.unavailableBody);
-    expect(html).not.toContain("<audio");
-    const play = html.match(/<button[^>]*aria-label="Пушти го примерот"[^>]*>/)?.[0] ?? "";
-    expect(play).toContain("disabled");
-  });
-
-  it("plays nothing and animates nothing without a clip (console in isolation)", () => {
-    const html = render(h(RadioConsole, { copy: mk.console, common: mk.common, clip: null, announcementClip: null }));
-    expect(html).not.toContain("<audio");
-    expect(html).not.toContain("animate-eq");
-    expect((html.match(/console-bar/g) ?? []).length).toBeGreaterThan(20);
-  });
-
-  it("lets a visitor preview their station name and shows the example announcements as examples", async () => {
-    const html = render(await HomePage(props()));
-    expect(html).toContain(mk.personalizer.title);
-    expect(html).toContain(mk.personalizer.note);
-    expect(html).toContain("Го слушате <strong");
-    expect(html).toContain("Пиња колада за 250 денари");
-    expect(html).toContain(mk.personalizer.exampleUnavailable);
-  });
-
-  it("lists the catalogue genres with the website's own atmosphere lines", async () => {
-    const html = render(await HomePage(props()));
-    for (const name of ["House", "Lounge", "Jazz", "Deep House", "Balkan Hits", "Chillout"]) expect(html).toContain(name);
-    expect(html).toContain(mk.genres.descriptions.house);
-    expect(html).toContain(mk.genres.descriptions["balkan-hits"]);
-    expect(html).toContain(mk.genres.sourceNote);
+    expect(text(html)).toContain("„Го слушате EmeraldCaffe Radio.“");
+    expect(text(html)).toContain("два коктели по цена на еден");
   });
 
   it("keeps the draft prices off the page while pricing is unpublished", async () => {
@@ -159,14 +154,14 @@ describe("homepage (Macedonian by default)", () => {
     const html = render(await HomePage(props()));
     for (const step of mk.howItWorks.steps) expect(html).toContain(step.title);
     expect(html).toContain(mk.howItWorks.note);
-    expect(html).toContain(mk.announcements.privacyNote);
   });
 
-  it("answers the FAQ in native details elements (first one open)", async () => {
+  it("answers the FAQ in native details rows, one open at a time", async () => {
     const html = render(await HomePage(props()));
-    expect(html).toContain(mk.faq.title);
-    expect(html.match(/<details/g)).toHaveLength(mk.faq.items.length);
-    expect(html).toMatch(/<details[^>]*open=""/);
+    const rows = html.match(/<details[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(mk.faq.items.length);
+    expect(rows.every((row) => row.includes('name="faq"'))).toBe(true);
+    expect(rows[0]).toContain('open=""');
     expect(html).toContain(mk.faq.items[5].answer);
   });
 
@@ -174,22 +169,24 @@ describe("homepage (Macedonian by default)", () => {
     const html = render(await HomePage(props()));
     const form = mk.trial.form;
     for (const label of [form.venueName, form.venueType, form.city, form.contactName, form.email, form.phone, form.preferredGenre, form.message]) {
-      expect(html).toMatch(new RegExp(`<label[^>]*for="[^"]+"[^>]*>${label}`));
+      expect(html).toMatch(new RegExp(`<label[^>]*for="[^"]+"[^>]*>${label.replace(/[?]/g, "\\?")}`));
     }
     expect(html).toContain(`<option value="recommendation">${form.recommendationOption}</option>`);
     expect(html).toContain('<option value="house">House</option>');
-    expect(html).toContain('<option value="cafe">');
+    expect(html).toContain(`<option value="cafe">${form.venueTypes.cafe}</option>`);
+    expect(html).toContain(`<option value="other">${form.otherType}</option>`);
     expect(html).toMatch(/<input type="hidden" name="locale" value="mk"/);
     expect(html).toMatch(/<div aria-hidden="true"[^>]*><label for="frk_hp"/);
     expect(html).toContain(form.submit);
     expect(html).toContain(mk.trial.activationNote);
+    expect(text(html)).toContain("(по избор)");
     expect(html).toContain('href="/privacy"');
   });
 
-  it("makes no invented commercial claims", async () => {
+  it("invents no testimonials, awards, partners or discounts", async () => {
     mocks.getLocale.mockResolvedValue("en");
     const html = render(await HomePage(props())).toLowerCase();
-    for (const word of ["testimonial", "customers", "award", "partner", "most popular", "discount", "guarantee", "licensed"]) {
+    for (const word of ["testimonial", "award", "partner", "most popular", "discount", "guarantee", "licensed"]) {
       expect(html, word).not.toContain(word);
     }
   });
@@ -208,31 +205,32 @@ describe("homepage in English", () => {
   it("renders the complete English version when the visitor chose it", async () => {
     mocks.getLocale.mockResolvedValue("en");
     const html = render(await HomePage(props()));
-    expect(html).toMatch(/<h1[^>]*>[\s\S]*The atmosphere begins[\s\S]*with the right sound\.[\s\S]*<\/h1>/);
-    expect(html).toContain(en.hero.lead);
-    expect(html).toContain("Request a 3-Day Free Trial");
-    expect(html).toContain(en.personalizer.title);
+    expect(text(html)).toContain("Your place.Your sound.Your radio.");
+    expect(html).toContain("On air in 140+ venues");
+    expect(html).toContain(">52,000+</span>");
+    expect(html).toContain(en.manifesto.label);
     expect(html).toContain(en.trial.form.submit);
     expect(html).toContain(en.faq.items[0].question);
+    expect(text(html)).toContain("“You’re listening to EmeraldCaffe Radio.”");
     expect(html).toMatch(/<input type="hidden" name="locale" value="en"/);
-    expect(html).not.toContain("Атмосферата почнува");
+    expect(html).not.toContain("Вашиот локал.");
   });
 });
 
 describe("header", () => {
-  it("offers the section links, MK / EN, Log in and the trial button to visitors", () => {
+  it("offers the chapters, MK / EN, Log in and the trial button to visitors", () => {
     const html = header(null);
-    for (const id of ["how-it-works", "listen", "venues", "plans", "faq"]) expect(html).toContain(`href="/#${id}"`);
+    for (const id of ["how-it-works", "features", "venues", "plans", "faq"]) expect(html).toContain(`href="/#${id}"`);
     expect(html).toMatch(/href="\/login"[^>]*>Најава/);
     expect(html).toMatch(/href="\/#trial"/);
     expect(html).toContain(mk.nav.trialCta);
     expect(html).toContain(`aria-label="${mk.common.brandHome}"`);
-    expect(html).toContain("frekvencija-logo-cobalt.png");
-    const mkSwitch = html.match(/<a[^>]*href="\/lang\/mk\?next=%2F"[^>]*>/)?.[0] ?? "";
-    const enSwitch = html.match(/<a[^>]*href="\/lang\/en\?next=%2F"[^>]*>/)?.[0] ?? "";
-    expect(mkSwitch).toContain('aria-current="true"');
-    expect(enSwitch).toContain("English");
-    expect(html).toMatch(/aria-label="Отвори го менито"[^>]*aria-haspopup="dialog"|aria-haspopup="dialog"[^>]*aria-label="Отвори го менито"/);
+    expect(html).toContain("frekvencija-logo-light.png");
+    const mkLink = html.match(/<a[^>]*href="\/lang\/mk\?next=%2F"[^>]*>/)?.[0] ?? "";
+    const enLink = html.match(/<a[^>]*href="\/lang\/en\?next=%2F"[^>]*>/)?.[0] ?? "";
+    expect(mkLink).toContain('aria-current="true"');
+    expect(enLink).toContain('aria-label="Префрли на English"');
+    expect(html).toMatch(/aria-label="Отвори го менито"[^>]*aria-haspopup="dialog"/);
   });
 
   it("replaces Log in with the signed-in user's own area", () => {
@@ -245,11 +243,11 @@ describe("header", () => {
 });
 
 describe("public layout", () => {
-  it("wraps pages in the ivory theme, skip link, main landmark and footer", async () => {
+  it("wraps pages in the night theme with both fonts, the skip link, main landmark and footer", async () => {
     mocks.getPublicViewer.mockResolvedValue({ role: "business_user" });
     mocks.loadPublicSettings.mockResolvedValue(settings({ contactEmail: "hello@frekvencija.online" }));
     const html = render(await PublicLayout({ params: Promise.resolve({}), children: h("p", null, "content") }));
-    expect(html).toMatch(/<div lang="mk" class="theme-public[^"]*font-display-test/);
+    expect(html).toMatch(/<div lang="mk" class="theme-night[^"]*font-display-test font-serif-test/);
     expect(html.indexOf('href="#main-content"')).toBeLessThan(html.indexOf("<header"));
     expect(html).toMatch(/<main[^>]*id="main-content"/);
     expect(html).toContain("content");
@@ -258,14 +256,15 @@ describe("public layout", () => {
     expect(html).toMatch(/href="\/terms"[^>]*>Услови/);
     expect(html).toContain('href="mailto:hello@frekvencija.online"');
     expect(html).toContain("frekvencija.online");
-    expect(html).toContain(mk.footer.tagline);
+    expect(html).toContain(mk.footer.ctaTitle);
+    expect(html).toContain(mk.footer.credits);
   });
 
-  it("switches the wrapper language and header labels to English", async () => {
+  it("switches the wrapper language and labels to English", async () => {
     mocks.getLocale.mockResolvedValue("en");
     const html = render(await PublicLayout({ params: Promise.resolve({}), children: null }));
-    expect(html).toMatch(/<div lang="en" class="theme-public/);
-    expect(html).toContain("How It Works");
+    expect(html).toMatch(/<div lang="en" class="theme-night/);
+    expect(html).toContain("How it works");
     expect(html).toContain(en.footer.tagline);
   });
 });
@@ -273,7 +272,8 @@ describe("public layout", () => {
 describe("trial request page and result", () => {
   it("renders the standalone trial page with the form and a sign-in link", async () => {
     const html = render(await RequestAccessPage());
-    expect(html).toMatch(new RegExp(`<h1[^>]*>${mk.trialPage.title}</h1>`));
+    expect(html).toMatch(/<h1[^>]*id="trial-title"[^>]*>/);
+    expect(html).toContain(mk.trialPage.title);
     expect(html).toContain(mk.trial.form.submit);
     expect(html).toMatch(/href="\/login"[^>]*>Најавете се/);
   });

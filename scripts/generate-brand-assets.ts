@@ -6,14 +6,14 @@
  * Outputs (committed, deterministic):
  *   public/brand/frekvencija-logo-ivory.png    transparent logo, green emblem + ivory wordmark (dark app UI)
  *   public/brand/frekvencija-logo-dark.png     transparent logo, green emblem + dark wordmark (email)
- *   public/brand/frekvencija-logo-cobalt.png   transparent logo, cobalt emblem + charcoal wordmark (public website)
+ *   public/brand/frekvencija-logo-light.png    transparent one-colour logo in warm ivory (public website)
  *   public/brand/frekvencija-emblem.png        the green f/equaliser emblem only, transparent
- *   public/brand/frekvencija-emblem-cobalt.png the same emblem in the website's cobalt
+ *   public/brand/frekvencija-emblem-light.png  the same emblem in warm ivory
  *   public/brand/venue-hero.jpg                the supplied venue photograph, web-optimised
  *   public/brand/genres/default-01..08.jpg     neutral genre artwork: cropped, tinted variations of the
  *                                             venue photograph (placeholder until the owner uploads covers)
- *   src/app/icon.png, src/app/apple-icon.png   app icons (cobalt emblem on the website's ivory)
- *   src/app/opengraph-image.png                social preview (ivory, cobalt logo, photo on the right)
+ *   src/app/icon.png, src/app/apple-icon.png   app icons (ivory emblem on the website's near-black)
+ *   src/app/opengraph-image.png                social preview (the hero photograph, ivory logo, vermillion line)
  *
  * sharp ships with Next.js as an optional dependency, so no extra install is needed.
  */
@@ -31,10 +31,10 @@ type Rgb = { r: number; g: number; b: number };
 
 const IVORY_TEXT: Rgb = { r: 244, g: 245, b: 238 }; // #F4F5EE — wordmark on the dark app UI
 const DARK_TEXT: Rgb = { r: 23, g: 29, b: 35 }; // wordmark for light backgrounds (email)
-/** Public website palette (src/app/globals.css, .theme-public). */
-const COBALT: Rgb = { r: 45, g: 75, b: 255 }; // #2D4BFF
-const CHARCOAL: Rgb = { r: 25, g: 27, b: 34 }; // #191B22
-const IVORY_PAGE: Rgb = { r: 245, g: 242, b: 236 }; // #F5F2EC
+/** Public website palette (src/app/globals.css, .theme-night). */
+const NIGHT: Rgb = { r: 12, g: 10, b: 9 }; // #0C0A09
+const WARM_IVORY: Rgb = { r: 243, g: 237, b: 228 }; // #F3EDE4
+const SIGNAL = "#ff5b2e";
 
 function isEmblemGreen(r: number, g: number, b: number): boolean {
   return g > r + 40 && g > b + 10;
@@ -157,29 +157,23 @@ async function genreArtwork(heroPath: string) {
   return n;
 }
 
-/** Social preview in the website's look: ivory field, cobalt logo, the venue photograph fading in on the right. */
-async function openGraph(heroPath: string, logoCobalt: string) {
+/** Social preview in the website's look: the hero photograph under a dark gradient, the ivory logo and a vermillion line. */
+async function openGraph(logoLight: string) {
   const W = 1200;
   const H = 630;
-  const photoWidth = 560;
-  const logo = await sharp(logoCobalt).resize({ width: 470 }).png().toBuffer();
-  const photo = await sharp(heroPath)
-    .resize({ width: photoWidth, height: H, fit: "cover", position: "attention" })
+  const photo = await sharp(join(ROOT, "src", "assets", "photos", "hero.jpg"))
+    .resize({ width: W, height: H, fit: "cover", position: "attention" })
     .png()
     .toBuffer();
-  const ivory = `rgb(${IVORY_PAGE.r},${IVORY_PAGE.g},${IVORY_PAGE.b})`;
-  const fade = Buffer.from(
-    `<svg width="${photoWidth}" height="${H}"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="${ivory}" stop-opacity="1"/><stop offset="0.28" stop-color="${ivory}" stop-opacity="0"/></linearGradient></defs><rect width="${photoWidth}" height="${H}" fill="url(#g)"/></svg>`,
+  const night = `rgb(${NIGHT.r},${NIGHT.g},${NIGHT.b})`;
+  const shade = Buffer.from(
+    `<svg width="${W}" height="${H}"><defs><linearGradient id="h" x1="0" x2="1"><stop offset="0" stop-color="${night}" stop-opacity="0.95"/><stop offset="0.55" stop-color="${night}" stop-opacity="0.55"/><stop offset="1" stop-color="${night}" stop-opacity="0.15"/></linearGradient><linearGradient id="v" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="${night}" stop-opacity="0"/><stop offset="1" stop-color="${night}" stop-opacity="0.9"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#h)"/><rect width="${W}" height="${H}" fill="url(#v)"/><rect x="72" y="388" width="120" height="6" rx="3" fill="${SIGNAL}"/></svg>`,
   );
-  const line = Buffer.from(
-    `<svg width="${W}" height="${H}"><path d="M72 452 C 140 452, 170 400, 230 400 S 320 470, 380 470 S 470 392, 530 392 S 600 440, 640 440" fill="none" stroke="rgb(${COBALT.r},${COBALT.g},${COBALT.b})" stroke-width="3" stroke-linecap="round" opacity="0.9"/></svg>`,
-  );
-  await sharp({ create: { width: W, height: H, channels: 4, background: { ...IVORY_PAGE, alpha: 1 } } })
+  const logo = await sharp(logoLight).resize({ width: 500 }).png().toBuffer();
+  await sharp(photo)
     .composite([
-      { input: photo, left: W - photoWidth, top: 0 },
-      { input: fade, left: W - photoWidth, top: 0 },
-      { input: line, left: 0, top: 0 },
-      { input: logo, left: 72, top: 236 },
+      { input: shade, left: 0, top: 0 },
+      { input: logo, left: 72, top: 252 },
     ])
     .png({ compressionLevel: 9 })
     .toFile(join(APP, "opengraph-image.png"));
@@ -188,19 +182,19 @@ async function openGraph(heroPath: string, logoCobalt: string) {
 async function main() {
   await mkdir(OUT, { recursive: true });
   const logoIvory = join(OUT, "frekvencija-logo-ivory.png");
-  const logoCobalt = join(OUT, "frekvencija-logo-cobalt.png");
+  const logoLight = join(OUT, "frekvencija-logo-light.png");
   await recolouredLogo(IVORY_TEXT, logoIvory, 1200);
   await recolouredLogo(DARK_TEXT, join(OUT, "frekvencija-logo-dark.png"), 1200);
-  await recolouredLogo(CHARCOAL, logoCobalt, 1200, COBALT);
+  await recolouredLogo(WARM_IVORY, logoLight, 1200, WARM_IVORY);
   await emblem(join(OUT, "frekvencija-emblem.png"), 512);
-  const cobaltEmblem = await emblem(join(OUT, "frekvencija-emblem-cobalt.png"), 512, COBALT);
-  await appIcon(cobaltEmblem, join(APP, "icon.png"), 512, IVORY_PAGE);
-  await appIcon(cobaltEmblem, join(APP, "apple-icon.png"), 180, IVORY_PAGE);
+  const lightEmblem = await emblem(join(OUT, "frekvencija-emblem-light.png"), 512, WARM_IVORY);
+  await appIcon(lightEmblem, join(APP, "icon.png"), 512, NIGHT);
+  await appIcon(lightEmblem, join(APP, "apple-icon.png"), 180, NIGHT);
 
   const heroPath = join(SRC, "venue-hero.png");
   await sharp(heroPath).jpeg({ quality: 82, mozjpeg: true }).toFile(join(OUT, "venue-hero.jpg"));
   const variants = await genreArtwork(heroPath);
-  await openGraph(heroPath, logoCobalt);
+  await openGraph(logoLight);
 
   console.log(`Brand assets written to public/brand (${variants} genre artworks) and src/app icons.`);
 }

@@ -10,31 +10,32 @@ export interface LanguageSwitchProps {
   label: string;
   /** `{language}` template for each link's accessible name, e.g. "Префрли на {language}". */
   switchTo: string;
-  /** `compact` for the header, `full` (native names) for the menu and footer. */
+  /** `compact` ("MK / EN") for the header, `full` (native names) for the menu and footer. */
   variant?: "compact" | "full";
-  /** Display classes for the nav element (default `inline-flex`; the header hides it on phones). */
+  /** Display classes of the nav element (default `inline-flex`). */
   className?: string;
 }
 
 /**
- * MK / EN switch. Plain links to /lang/<locale> (a route handler that sets the cookie and redirects
- * back to the current page), so it works without JavaScript and never changes the URL structure.
+ * MK / EN switch: plain links to /lang/<locale>, a route handler that remembers the choice in a cookie
+ * and returns to the current page — so it works without JavaScript and never changes the URLs.
  */
 export function LanguageSwitch({ locale, label, switchTo, variant = "compact", className }: LanguageSwitchProps) {
   const pathname = usePathname() || "/";
+  const compact = variant === "compact";
   return (
     <nav aria-label={label} className={className ?? "inline-flex"}>
-      <ul
-        className={cn(
-          "flex items-center",
-          variant === "compact" ? "h-10 rounded-full border border-border bg-surface p-0.5" : "gap-2",
-        )}
-      >
-        {LOCALES.map((candidate) => {
+      <ul className={cn("flex items-center", compact ? "label-mono gap-0.5" : "gap-2")}>
+        {LOCALES.map((candidate, index) => {
           const current = candidate === locale;
           const names = LOCALE_NAMES[candidate];
           return (
-            <li key={candidate}>
+            <li key={candidate} className="flex items-center gap-0.5">
+              {compact && index > 0 && (
+                <span aria-hidden="true" className="text-fg-subtle">
+                  /
+                </span>
+              )}
               <a
                 href={`/lang/${candidate}?next=${encodeURIComponent(pathname)}`}
                 hrefLang={candidate}
@@ -42,20 +43,18 @@ export function LanguageSwitch({ locale, label, switchTo, variant = "compact", c
                 aria-current={current ? "true" : undefined}
                 aria-label={current ? undefined : fill(switchTo, { language: names.long })}
                 className={cn(
-                  "inline-flex items-center justify-center font-semibold tracking-wide transition-colors",
-                  variant === "compact"
-                    ? "h-9 min-w-11 rounded-full px-3 text-xs uppercase"
-                    : "h-11 rounded-full border px-4 text-sm",
-                  current
-                    ? variant === "compact"
-                      ? "bg-fg text-canvas"
-                      : "border-fg bg-fg text-canvas"
-                    : variant === "compact"
-                      ? "text-fg-muted hover:bg-surface-2 hover:text-fg"
-                      : "border-border text-fg-muted hover:border-border-strong hover:text-fg",
+                  "inline-flex h-11 items-center justify-center rounded-full transition-colors",
+                  compact ? "min-w-9 px-1.5" : "border px-5 text-sm font-medium",
+                  compact
+                    ? current
+                      ? "text-fg"
+                      : "text-fg-subtle hover:text-fg"
+                    : current
+                      ? "border-fg bg-fg text-canvas"
+                      : "border-border-strong text-fg-muted hover:border-fg/50 hover:text-fg",
                 )}
               >
-                {variant === "compact" ? names.short : names.long}
+                {compact ? names.short : names.long}
               </a>
             </li>
           );

@@ -43,12 +43,12 @@ The platform name is defined once in `src/config/platform.ts` (override it with
   Announcements (a venue selector, generate or upload, preview, approve, frequency and voice volume)
   and Settings (platform contact details, default announcement frequency for new venues, privacy
   policy and terms text, and the status of the integrations).
-- **Public website** (`docs/WEBSITE.md`): a bright editorial homepage (`/`) in Macedonian with a
-  complete English version (MK / EN switch), the signature radio console, a "how would your radio
-  sound?" preview, venue types, the live genre catalogue, the announcement showcase and a **3-day free
-  trial** request (also at `/request-access`), plus `/privacy` and `/terms` (the owner's text from
-  Settings, or an honest "not published yet"). The sign-in pages (`/login`, `/forgot-password`,
-  `/reset-password`) and the app keep their dark design.
+- **Public website** (`docs/WEBSITE.md`): a dark, motion-designed homepage (`/`) in Macedonian with a
+  complete English version (MK / EN switch): an intro that tunes in to 101.7, the manifesto, headline
+  figures, how it works, features, venue types, an announcement preview and a **3-day free trial**
+  request (also at `/request-access`), plus `/privacy` and `/terms` (the owner's text from Settings, or
+  an honest "not published yet"). The sign-in pages (`/login`, `/forgot-password`, `/reset-password`)
+  and the app keep their dark evergreen design.
 - **Security**: Supabase Auth with invite-only accounts; Row Level Security on every table; private
   Storage buckets; short-lived signed media URLs, signed with the venue user's own session; server-side
   authorisation that never trusts a business id sent by the client; rate limits on sign-in, password
@@ -59,7 +59,8 @@ The platform name is defined once in `src/config/platform.ts` (override it with
 | Area | Choice |
 | --- | --- |
 | App | Next.js 16.3.6 (App Router, `src/proxy.ts`), React 19.2, TypeScript (strict) |
-| UI | Tailwind CSS 4 (tokens in `src/app/globals.css`, with the public website's light scopes), `lucide-react` icons, Inter and Playfair Display (Latin + Cyrillic) via `next/font` |
+| UI | Tailwind CSS 4 (tokens in `src/app/globals.css`, with the public website's `.theme-night` and `.theme-paper` scopes), `lucide-react` icons, Inter, Sofia Sans Extra Condensed and Cormorant Garamond (Latin + Cyrillic) via `next/font` |
+| Website motion | GSAP 3.15 (ScrollTrigger, SplitText) with `@gsap/react`, Lenis smooth scrolling; all of it off with reduced motion |
 | Backend | Server Components, Server Actions and Route Handlers (Node runtime) |
 | Auth, database, files | Supabase Auth, Postgres with RLS, private Storage (`@supabase/ssr`, `@supabase/supabase-js`) |
 | Validation | `zod` 4; MP3 checks with an own frame walk plus `music-metadata` |

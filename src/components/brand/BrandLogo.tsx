@@ -5,19 +5,19 @@ import { cn } from "@/lib/utils/cn";
 /**
  * The approved Frekvencija logo (f/equaliser emblem + lowercase wordmark), never with a domain
  * suffix. `tone="ivory"` is the dark-interface variant (green emblem, ivory wordmark), `tone="dark"`
- * is for light backgrounds such as email (green emblem, dark wordmark) and `tone="cobalt"` is the
- * public website's adaptation (cobalt emblem, charcoal wordmark). Generated from design/assets by
- * `npm run brand:assets`.
+ * is for light backgrounds such as email (green emblem, dark wordmark) and `tone="light"` is the
+ * one-colour warm-ivory version the public website uses on its dark pages. Generated from
+ * design/assets by `npm run brand:assets`.
  */
 const LOGOS = {
   ivory: { src: "/brand/frekvencija-logo-ivory.png", width: 1200, height: 274 },
   dark: { src: "/brand/frekvencija-logo-dark.png", width: 1200, height: 274 },
-  cobalt: { src: "/brand/frekvencija-logo-cobalt.png", width: 1200, height: 274 },
+  light: { src: "/brand/frekvencija-logo-light.png", width: 1200, height: 274 },
 } as const;
 
 const EMBLEMS = {
   green: "/brand/frekvencija-emblem.png",
-  cobalt: "/brand/frekvencija-emblem-cobalt.png",
+  light: "/brand/frekvencija-emblem-light.png",
 } as const;
 
 const HEIGHTS = { sm: "h-6", md: "h-8", lg: "h-10", xl: "h-14" } as const;
@@ -53,7 +53,7 @@ export interface BrandEmblemProps {
   className?: string;
   /** Accessible name; without it the emblem is decorative. */
   label?: string;
-  /** `green` (the app) or `cobalt` (the public website). */
+  /** `green` (the app) or `light` (one-colour ivory, the public website). */
   tone?: keyof typeof EMBLEMS;
 }
 
