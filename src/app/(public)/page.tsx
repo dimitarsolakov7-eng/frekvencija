@@ -13,7 +13,7 @@ import { Plans } from "@/components/public/site/Plans";
 import { Stats } from "@/components/public/site/Stats";
 import { TrialSection } from "@/components/public/site/TrialSection";
 import { Venues } from "@/components/public/site/Venues";
-import { EXAMPLE_VENUE_NAME, headlineVenues, SITE_STATS } from "@/config/site";
+import { EXAMPLE_VENUE_NAME, siteStats } from "@/config/site";
 import { getSiteCopy } from "@/content/site";
 import { loadPublicGenres, loadPublicSettings } from "@/lib/data/public";
 import { LOCALE_TAGS } from "@/lib/i18n/locale";
@@ -54,7 +54,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
   return (
     <>
       <Intro label={copy.intro.tuning} />
-      <Hero copy={copy} venuesOnAir={headlineVenues()} />
+      <Hero copy={copy} />
       <GenreMarquee
         genres={genres.map((genre) => genre.name)}
         label={copy.marquee.label}
@@ -62,7 +62,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
         playLabel={copy.common.playMotion}
       />
       <Manifesto copy={copy.manifesto} photoAlt={copy.manifesto.photoAlt} />
-      <Stats copy={copy.stats} stats={SITE_STATS} locale={locale} photoAlt={copy.stats.photoAlt} />
+      <Stats copy={copy.stats} stats={siteStats(genres.length)} locale={locale} photoAlt={copy.stats.photoAlt} />
       <HowItWorks copy={copy.howItWorks} photos={[PHOTOS.cafeRoom, PHOTOS.lounge, PHOTOS.counter, PHOTOS.friends]} />
       <Features copy={copy.features} />
       <Venues copy={copy.venues} genres={genreOptions} />

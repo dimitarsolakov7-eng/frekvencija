@@ -109,8 +109,8 @@ export interface SiteCopy {
     tuning: string;
   };
   hero: {
-    /** `{count}` = the number of venues on air. */
-    onAir: string;
+    /** The short line with the live dot above the headline. */
+    eyebrow: string;
     titleLines: readonly [string, string, string];
     lead: string;
     primaryCta: string;

@@ -42,7 +42,7 @@ export const EN: SiteCopy = {
     tuning: "Finding the frequency",
   },
   hero: {
-    onAir: "On air in {count} venues",
+    eyebrow: "Radio for hospitality",
     titleLines: ["Your place.", "Your sound.", "Your radio."],
     lead: "A personal radio station for cafés, restaurants, hotels and bars — your name on air, music for every hour and your offers between the songs. No outside ads.",
     primaryCta: "Try it free for 3 days",
@@ -65,11 +65,11 @@ export const EN: SiteCopy = {
   },
   stats: {
     label: "In numbers",
-    title: "Already on air across Macedonia.",
+    title: "Numbers without the fine print.",
     items: {
-      venues: "venues on air",
-      cities: "cities",
-      hours: "hours of music every month",
+      trialDays: "days free to try",
+      genres: "music genres",
+      station: "station that’s yours alone",
       ads: "outside ads",
     },
     photoAlt: "An amber vinyl record spinning on a turntable",
@@ -120,8 +120,8 @@ export const EN: SiteCopy = {
     offerChip: "Announcement · 21:00",
     hours: [
       { time: "08:00", genre: "Chillout" },
-      { time: "13:00", genre: "Jazz" },
-      { time: "20:00", genre: "Lounge" },
+      { time: "13:00", genre: "Lounge" },
+      { time: "20:00", genre: "R&B" },
       { time: "23:00", genre: "Deep House" },
     ],
     devices: "Laptop · Tablet · Phone",

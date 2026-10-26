@@ -51,7 +51,7 @@ export const VENUE_TYPES: readonly VenueTypeConfig[] = [
 
 export const VENUE_TYPE_KEYS = VENUE_TYPES.map((venue) => venue.key) as readonly VenueTypeKey[];
 
-export type StatKey = "venues" | "cities" | "hours" | "ads";
+export type StatKey = "trialDays" | "genres" | "station" | "ads";
 
 export interface SiteStat {
   key: StatKey;
@@ -60,22 +60,23 @@ export interface SiteStat {
   suffix: string;
 }
 
-/**
- * ILLUSTRATIVE NUMBERS — invented for the design preview at the owner's request. Replace them with
- * real figures before the website goes live: publishing made-up customer numbers is misleading
- * advertising under consumer-protection law. (`ads: 0` is true: there are no outside ads.)
- */
-export const SITE_STATS: readonly SiteStat[] = [
-  { key: "venues", value: 140, suffix: "+" },
-  { key: "cities", value: 18, suffix: "" },
-  { key: "hours", value: 52_000, suffix: "+" },
-  { key: "ads", value: 0, suffix: "" },
-];
+/** Length of the free trial in days (the copy also says it in words). */
+export const TRIAL_DAYS = 3;
 
-/** "140+" — the venues figure used in the hero. */
-export function headlineVenues(stats: readonly SiteStat[] = SITE_STATS): string {
-  const venues = stats.find((stat) => stat.key === "venues");
-  return venues ? `${venues.value}${venues.suffix}` : "";
+/**
+ * The figures of the Numbers chapter. Facts only: the trial length, the genres in the live catalogue,
+ * one station per venue and no outside ads. Customer figures (venues, cities, hours played) belong here
+ * only as real, verifiable numbers: invented ones would be misleading advertising. A catalogue without
+ * public genres drops that figure rather than show "0 genres".
+ */
+export function siteStats(genreCount: number): readonly SiteStat[] {
+  const stats: SiteStat[] = [
+    { key: "trialDays", value: TRIAL_DAYS, suffix: "" },
+    { key: "genres", value: genreCount, suffix: "" },
+    { key: "station", value: 1, suffix: "" },
+    { key: "ads", value: 0, suffix: "" },
+  ];
+  return stats.filter((stat) => stat.key !== "genres" || stat.value > 0);
 }
 
 /** The example venue used across the website (never a real customer). */

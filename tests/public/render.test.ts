@@ -15,8 +15,9 @@ import TermsPage from "@/app/(public)/terms/page";
 import { SiteHeader } from "@/components/public/site/SiteHeader";
 import { TrialRequestResult } from "@/components/public/site/TrialRequestForm";
 import { PLANS } from "@/config/plans";
+import { TRIAL_DAYS } from "@/config/site";
 import { getSiteCopy } from "@/content/site";
-import type { PublicSettingsResult } from "@/lib/data/public";
+import { DEFAULT_PUBLIC_GENRES, type PublicSettingsResult } from "@/lib/data/public";
 import type { Locale } from "@/lib/i18n/locale";
 
 const mocks = vi.hoisted(() => ({
@@ -92,11 +93,11 @@ describe("homepage (Macedonian by default)", () => {
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
 
-  it("opens with a single h1 promise, the on-air line and both actions", async () => {
+  it("opens with a single h1 promise, the eyebrow and both actions", async () => {
     const html = render(await HomePage(props()));
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(text(html)).toContain("Вашиот локал.Вашиот звук.Вашето радио.");
-    expect(html).toContain("Во етер во 140+ локали");
+    expect(html).toContain(mk.hero.eyebrow);
     expect(html).toContain(mk.hero.lead);
     expect(html).toMatch(/href="\/#trial"[^>]*>[\s\S]*?Пробај 3 дена бесплатно/);
     expect(html).toMatch(/href="\/#how-it-works"[^>]*>[\s\S]*?Види како функционира/);
@@ -117,10 +118,12 @@ describe("homepage (Macedonian by default)", () => {
     expect(html).not.toContain("<audio");
   });
 
-  it("shows the headline numbers in their final form", async () => {
+  it("shows only true figures, in their final form: trial days, catalogue genres, one station, no ads", async () => {
     const html = render(await HomePage(props()));
-    for (const value of ["140+", "18", "52.000+", "0"]) expect(html).toContain(`>${value}</span>`);
+    for (const value of [TRIAL_DAYS, DEFAULT_PUBLIC_GENRES.length, 1, 0]) expect(html).toContain(`>${value}</span>`);
     for (const label of Object.values(mk.stats.items)) expect(html).toContain(label);
+    expect(text(html)).toContain(mk.stats.title);
+    expect(text(html)).not.toContain("локали во етер");
   });
 
   it("lists the catalogue genres for screen readers and in the moving rows", async () => {
@@ -206,8 +209,8 @@ describe("homepage in English", () => {
     mocks.getLocale.mockResolvedValue("en");
     const html = render(await HomePage(props()));
     expect(text(html)).toContain("Your place.Your sound.Your radio.");
-    expect(html).toContain("On air in 140+ venues");
-    expect(html).toContain(">52,000+</span>");
+    expect(html).toContain(en.hero.eyebrow);
+    expect(text(html)).toContain(en.stats.title);
     expect(html).toContain(en.manifesto.label);
     expect(html).toContain(en.trial.form.submit);
     expect(html).toContain(en.faq.items[0].question);

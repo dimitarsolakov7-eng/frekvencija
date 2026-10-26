@@ -13,7 +13,7 @@ import { dialPercent } from "@/components/public/site/FmDial";
 import { INTRO_SEEN_KEY, MOTION_BOOT_SCRIPT, MOTION_READY_CLASS } from "@/components/public/site/motion/boot";
 import { siteNavLinks } from "@/components/public/site/nav";
 import { PLANS, PRICING_PUBLISHED, formatPlanPrice, publishedPlans } from "@/config/plans";
-import { EXAMPLE_STATION_NAMES, EXAMPLE_VENUE_NAME, headlineVenues, SITE_STATS, VENUE_TYPES } from "@/config/site";
+import { EXAMPLE_STATION_NAMES, EXAMPLE_VENUE_NAME, siteStats, TRIAL_DAYS, VENUE_TYPES } from "@/config/site";
 import { getSiteCopy, highlightRuns } from "@/content/site";
 import { previewStationName, suggestStationName } from "@/lib/brand/station-name";
 import { LOCALES, LOCALE_COOKIE, fill, isLocale, otherLocale, parseLocale, safeReturnPath } from "@/lib/i18n/locale";
@@ -93,12 +93,12 @@ describe("bilingual copy", () => {
   it("uses the placeholders the components fill, and says three days consistently", () => {
     for (const copy of [mk, en]) {
       for (const example of copy.announcements.examples) expect(example.text).toContain("{name}");
-      expect(copy.hero.onAir).toContain("{count}");
       expect(copy.trial.form.privacyNote).toContain("{privacy}");
       expect(copy.trial.messages.tooLong).toContain("{max}");
       expect(copy.footer.rights).toContain("{year}");
       expect(highlightRuns(copy.manifesto.text).filter((run) => run.highlight)).toHaveLength(2);
     }
+    expect(TRIAL_DAYS).toBe(3);
     expect(mk.nav.trialCta).toBe("Пробај 3 дена бесплатно");
     expect(en.nav.trialCta).toBe("Try it free for 3 days");
     expect(mk.trial.successBody).toBe("Ќе ве контактираме за подготовка и активирање на вашата 3-дневна проба.");
@@ -138,9 +138,16 @@ describe("numbers, plans and configuration", () => {
     expect(formatStatNumber(52_000, "en")).toBe("52,000");
     expect(formatStatNumber(140.4, "en")).toBe("140");
     expect(formatStatNumber(-3, "mk")).toBe("0");
-    expect(headlineVenues()).toBe("140+");
-    expect(SITE_STATS.map((stat) => stat.key)).toEqual(["venues", "cities", "hours", "ads"]);
-    expect(SITE_STATS.find((stat) => stat.key === "ads")?.value).toBe(0);
+  });
+
+  it("states only facts in the Numbers chapter, and drops the genre figure for an empty catalogue", () => {
+    expect(siteStats(7).map((stat) => [stat.key, stat.value])).toEqual([
+      ["trialDays", TRIAL_DAYS],
+      ["genres", 7],
+      ["station", 1],
+      ["ads", 0],
+    ]);
+    expect(siteStats(0).map((stat) => stat.key)).toEqual(["trialDays", "station", "ads"]);
   });
 
   it("keeps the draft prices unpublished until approved", () => {

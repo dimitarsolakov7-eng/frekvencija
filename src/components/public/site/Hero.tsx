@@ -5,7 +5,6 @@ import { ArrowRight } from "lucide-react";
 import { PHOTOS } from "@/assets/photos";
 import { SECTION_IDS } from "@/config/site";
 import type { SiteCopy } from "@/content/site/types";
-import { fill } from "@/lib/i18n/locale";
 import { cn } from "@/lib/utils/cn";
 import { DIAL_FREQUENCY, dialPercent, FmDial } from "./FmDial";
 import { CONTAINER, PILL_LG } from "./layout";
@@ -19,8 +18,6 @@ import { SectionButtonLink } from "./SectionLink";
 
 export interface HeroProps {
   copy: Pick<SiteCopy, "hero" | "common">;
-  /** "140+": the venues figure of the on-air line. */
-  venuesOnAir: string;
 }
 
 /**
@@ -29,7 +26,7 @@ export interface HeroProps {
  * whose needle tunes in to 101.7. The entrance waits for the intro (when it plays); on scroll the
  * content lifts away and the needle drifts on.
  */
-export function Hero({ copy, venuesOnAir }: HeroProps) {
+export function Hero({ copy }: HeroProps) {
   const ref = useRef<HTMLElement>(null);
   const { hero } = copy;
 
@@ -76,7 +73,7 @@ export function Hero({ copy, venuesOnAir }: HeroProps) {
           <div className="@container grid gap-7 sm:gap-8">
             <p data-hero-fade="" data-anim="" className="label-mono flex items-center gap-3 text-fg">
               <LiveDot />
-              {fill(hero.onAir, { count: venuesOnAir })}
+              {hero.eyebrow}
             </p>
             <h1 id="hero-title" className="display-hero text-fg">
               {hero.titleLines.map((line, index) => (

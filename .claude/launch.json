@@ -4,8 +4,13 @@
     {
       "name": "venue-radio-dev",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
-      "port": 3000
+      "runtimeArgs": [
+        "node_modules/next/dist/bin/next",
+        "dev",
+        "-p",
+        "3005"
+      ],
+      "port": 3005
     }
   ]
 }

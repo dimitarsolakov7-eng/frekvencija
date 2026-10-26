@@ -184,29 +184,21 @@ read, and User: read to show remaining credits). In Vercel, open **Settings → 
 Variables**, add `ELEVENLABS_API_KEY`, then go to **Deployments**, open the **⋯** menu of the
 latest one and choose **Redeploy**. Details are in [SETUP.md §10](SETUP.md#10-optional-elevenlabs-voice-generation).
 
-## Step 8: the new website (when you choose a design)
+## Step 8: the new website (done on 2026-10-26)
 
-Two redesigns of the public website are ready to compare. Nothing on frekvencija.online changes until
-you choose one:
+The v3 website (dark, vermillion and full of motion, Macedonian with an English switch, the 3-day trial
+request) is live on frekvencija.online. The database update it needs, two optional columns for the
+city and preferred genre of a trial request, was applied first. The ivory and cobalt v2 design stays
+on the branch `website-redesign`, unused.
 
-- **v3**: dark, vermillion and full of motion, with new photographs. Branch `website-v3`.
-- **v2**: bright ivory and cobalt. Branch `website-redesign`.
+Still to do, at your pace (`docs/WEBSITE.md` explains each):
 
-Both are in Macedonian with an English switch and have the 3-day trial request. When you have chosen:
-
-1. If you chose v3, replace its invented numbers first (140+ venues, 18 cities, 52,000+ hours). They
-   exist only so the design could be judged; `docs/WEBSITE.md` §1 says where they are.
-2. On the PC, in `DesktopMusic Radio`, run `npm run db:migrate`. It adds two optional columns
-   (city and preferred genre) to the requests table; nothing else changes and the current site keeps
-   working.
-3. Merge the chosen branch into `frekvencija-mvp` and push (or ask Claude to do it). Vercel deploys
-   it within minutes.
-4. Open <https://frekvencija.online>: the homepage should be the new one, in Macedonian, with
-   **MK / EN** in the header. Send yourself a test request from the form and check it under
-   **Businesses → Access requests** in the admin.
-5. Later, at your pace (`docs/WEBSITE.md` on the chosen branch explains each): replace the photos
-   with photos of real venues, set your contact email under **Settings**, and flip the prices to
-   published once you approve them.
+1. Send yourself a test request from the form and check it under **Businesses → Access requests** in
+   the admin.
+2. Set your contact email under **Settings**, so it appears in the footer and on the policy pages.
+3. Replace the photos with photos of real venues when you have them.
+4. Flip the prices to published once you approve them.
+5. Add real customer numbers to the Numbers chapter once you have figures you can back up.
 
 ## Afterwards
 

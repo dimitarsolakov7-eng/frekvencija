@@ -5,31 +5,30 @@ is Macedonian by default with a complete English version (the **MK / EN** switch
 menu and footer). It sits in front of the unchanged app: sign-in (`/login`), the venue radio
 (`/radio`) and the admin workspace (`/admin`) keep their dark evergreen design and all their routes.
 
-Three designs exist side by side until the owner chooses:
+The owner chose v3, and it went live on 2026-10-26. The earlier designs stay in git history:
 
-| Version | Branch | State |
+| Version | Where | State |
 | --- | --- | --- |
-| v1, the original homepage | `frekvencija-mvp` | Live on frekvencija.online |
-| v2, ivory and cobalt editorial | `website-redesign` | Preview only |
-| v3, this document: dark, vermillion, motion design | `website-v3` | Preview only |
+| v1, the original homepage | `frekvencija-mvp` history before v3 | Replaced |
+| v2, ivory and cobalt editorial | branch `website-redesign` | Not used |
+| v3, this document: dark, vermillion, motion design | `frekvencija-mvp` | Live on frekvencija.online |
 
-## 1. Before v3 goes live: the illustrative numbers
+## 1. The numbers: facts only
 
-The owner asked for imaginary figures so the design could be judged with numbers in place. They are
-**invented** and must not be published as they are: presenting them as facts would be misleading
-advertising. They live in one place, `SITE_STATS` in `src/config/site.ts`:
+The design preview used invented customer figures (140+ venues, 18 cities, 52,000+ hours of music).
+They were never published: presented as facts they would have been misleading advertising. The live
+Numbers chapter, "Numbers without the fine print.", shows only true figures, from `siteStats()` in
+`src/config/site.ts`:
 
-| Figure | Shown as |
-| --- | --- |
-| `venues: 140, "+"` | "140+ venues on air" in the Numbers chapter, and "On air in 140+ venues" above the hero headline |
-| `cities: 18` | "18 cities" |
-| `hours: 52_000, "+"` | "52,000+ hours of music every month" |
-| `ads: 0` | "0 outside ads". This one is true. |
+| Figure | Shown as | Source |
+| --- | --- | --- |
+| `trialDays` | "3 days free to try" | `TRIAL_DAYS` |
+| `genres` | "7 music genres" | The number of genres in the live catalogue, counted on every visit. With an empty catalogue the figure is left out |
+| `station` | "1 station that's yours alone" | Every venue has its own station |
+| `ads` | "0 outside ads" | There are none |
 
-The Numbers title ("Already on air across Macedonia.") and the hero's on-air line (`hero.onAir`) are
-claims too; they are in `src/content/site/mk.ts` and `en.ts`. Before launch, either put real
-figures in `SITE_STATS` and adjust those two sentences, or ask for the Numbers chapter and the on-air
-line to be taken out until there are real figures.
+Real customer figures can be added once they exist: a new key in `siteStats()` and its label in
+`stats.items` of both content files. Only numbers you can back up belong there.
 
 ## 2. What the visitor sees
 
@@ -39,10 +38,10 @@ The homepage is a scroll story in numbered chapters.
 | --- | --- | --- |
 | Intro | On the first visit of a browser session: nine vermillion bars tune from 87.5 to 101.7 MHz, the logo appears, and the curtain lifts into the hero | Homepage only. Skipped for a section link, for reduced motion, and by any key or tap |
 | Header | Logo, How it works, Features, Venues, Plans, FAQ, MK / EN, Log in, the trial button. It slides away while reading down and returns when scrolling up or tabbing to it. Below 1280px the links move into a full-screen menu | Signed-in visitors see "Open radio" / "Admin workspace" instead of Log in |
-| Hero (`#top`) | Full-bleed bar photograph, the on-air line, "Your place. Your sound. Your radio.", the lead, two actions, an FM dial at 101.7, and on wide screens a glass "now on air" card for the sample station EmeraldCaffe Radio | The card is tagged **Example** and is hidden from screen readers |
+| Hero (`#top`) | Full-bleed bar photograph, the eyebrow "Radio for hospitality", "Your place. Your sound. Your radio.", the lead, two actions, an FM dial at 101.7, and on wide screens a glass "now on air" card for the sample station EmeraldCaffe Radio | The card is tagged **Example** and is hidden from screen readers |
 | Genre ribbon | Two giant rows of genres drifting in opposite directions, faster while scrolling | The live catalogue's genres (the default list before setup); a pause button; still with reduced motion |
 | 01 `#manifesto` | The brand statement; words light up as it scrolls through the screen | Fully lit without motion |
-| 02 `#numbers` | Four figures counting up beside a turning vinyl | **Illustrative, see §1** |
+| 02 `#numbers` | Four figures counting up beside a turning vinyl | True figures only, see §1 |
 | 03 `#how-it-works` | Four steps with photographs: tell us, we prepare, press play, three days on us. On desktop the section holds still and the steps slide sideways as you scroll | A plain list of cards on phones and with reduced motion |
 | 04 `#features` | Six cards: your name on air (cycles through sample names), no outside ads, your offers, music for every hour, any browser, simple for staff | — |
 | 05 `#venues` | Cafés, restaurants, hotels, bars: a moment, a description and recommended genres. On desktop a photo follows the pointer; on phones each row has its photo | Only genres that exist in the catalogue are recommended |
@@ -78,7 +77,7 @@ The website plays no audio. The waveforms and the on-air card are illustrations.
 | What | Where |
 | --- | --- |
 | Every sentence, in both languages | `src/content/site/mk.ts` and `src/content/site/en.ts` (the shape in `types.ts` keeps both complete). `*stars*` mark the highlighted phrases of the manifesto; `{name}` is the venue name in the sample announcements |
-| The numbers | `SITE_STATS` in `src/config/site.ts` (see §1) |
+| The numbers | `siteStats()` in `src/config/site.ts` (see §1) |
 | Venue types, their photos and recommended genres; the sample venue and station names; section anchors | `src/config/site.ts` |
 | Photographs | `src/assets/photos/` (see §5) |
 | Plans and prices, and whether they are published | `src/config/plans.ts`: set `PRICING_PUBLISHED = true` once the amounts are approved |
@@ -105,14 +104,15 @@ wide) and update its line in `PHOTO_SOURCES`. Alt texts are in the content files
   validation in the visitor's language, rate limits (5 per network per hour, 3 per email per day, 30
   from everyone per hour), then an insert with the secret-key client into `access_requests`.
 - The migration `supabase/migrations/20261026000100_trial_requests.sql` adds the two optional columns
-  `city` and `preferred_genre`. Apply it with `npm run db:migrate` before publishing v2 or v3; until it
-  is applied, submissions answer with the "couldn't be sent right now" message and nothing is stored.
+  `city` and `preferred_genre`. It was applied to the hosted database with `npm run db:migrate` before v3
+  went live. Without it, submissions answer with the "couldn't be sent right now" message and nothing
+  is stored.
 - Nothing is approved, activated or charged automatically. The admin marks requests contacted /
   approved / declined and can create the business from a request.
 
 ## 7. Checks
 
 `npm run check` (typecheck, lint, unit and database tests, production build) covers the website:
-chapter order and copy in both languages, the numbers and their formatting, the plans and form states,
+chapter order and copy in both languages, the true figures and their formatting, the plans and form states,
 the trial action (validation, storing, duplicates, rate limits, setup mode), the language route and the
 motion boot script.
